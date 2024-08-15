@@ -1,0 +1,24 @@
+{
+    "manifest_version": 2,
+    "name": "Digital Assignment Scraper",
+    "version": "1.0",
+    "description": "Scrapes digital assignment data from VTOP",
+    "permissions": [
+        "activeTab",
+        "https://*.vit.ac.in/*"
+    ],
+    "browser_action": {
+        "default_popup": "popup.html",
+        "default_title": "Scrape DA Data"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://*.vit.ac.in/*"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
+    ]
+}
