@@ -16,6 +16,7 @@ let da_page = async () => {
             courses: []
         };
 
+        // Scrape the registration number
         if (document.getElementsByClassName("navbar-text text-light small fw-bold")[0] != undefined) {
             scrapedData.reg_no = document.getElementsByClassName("navbar-text text-light small fw-bold")[0].innerText.replace("(STUDENT)", "").trim();
         } else {
@@ -53,12 +54,14 @@ let da_page = async () => {
                 Array.from(table_inner).forEach((row) => {
                     let date = row.childNodes[9].childNodes[1];
                     let is_uploaded = true;
+                    let assessment_title = row.children[1].innerText; // Scraping assessment title
                     try {
                         is_uploaded = row.children[6].children[0].innerHTML === "";
                     } catch { }
                     try {
                         if (date.style.color == "green" && is_uploaded) {
                             due_dates.push({
+                                assessment_title: assessment_title, // Adding assessment title
                                 date_due: date.innerHTML
                             });
                         }
