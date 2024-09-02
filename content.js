@@ -5,7 +5,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         }).catch(error => {
             sendResponse({ success: false, error: error.message });
         });
-        return true;  
+        return true;
     }
 });
 
@@ -18,8 +18,7 @@ let da_page = async () => {
 
         if (document.getElementsByClassName("navbar-text text-light small fw-bold")[0] != undefined) {
             scrapedData.reg_no = document.getElementsByClassName("navbar-text text-light small fw-bold")[0].innerText.replace("(STUDENT)", "").trim();
-        }
-        else {
+        } else {
             scrapedData.reg_no = document.getElementsByClassName("VTopHeaderStyle")[0].innerText.replace("(STUDENT)", "").trim();
         }
 
@@ -28,7 +27,7 @@ let da_page = async () => {
         try { csrf = document.getElementsByName("_csrf")[3].defaultValue; } catch { }
 
         for (let i = 1; i < table.children.length; i++) {
-            var classid = table.children[i].children[1].innerHTML;
+            let classid = table.children[i].children[1].innerHTML;
 
             if (table.children[i].children[3].children.length != 1) {
                 let response = await fetch(
@@ -44,13 +43,13 @@ let da_page = async () => {
                 );
 
                 let data = await response.text();
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(data, "text/html");
-                var table_inner = doc.getElementsByClassName("fixedContent tableContent");
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(data, "text/html");
+                let table_inner = doc.getElementsByClassName("fixedContent tableContent");
                 let course_code = doc.getElementsByClassName("fixedContent tableContent")[0].children[1].innerText;
                 let course_title = doc.getElementsByClassName("fixedContent tableContent")[0].children[2].innerText;
 
-                let due_dates = []; 
+                let due_dates = [];
                 Array.from(table_inner).forEach((row) => {
                     let date = row.childNodes[9].childNodes[1];
                     let is_uploaded = true;
@@ -59,13 +58,9 @@ let da_page = async () => {
                     } catch { }
                     try {
                         if (date.style.color == "green" && is_uploaded) {
-                            try {
-                                let download_link = row.childNodes[11].childNodes;
-                                due_dates.push({
-                                    date_due: date.innerHTML,
-                                    download_link: download_link.length > 0 ? download_link[0].outerHTML : "No download link",
-                                });
-                            } catch { }
+                            due_dates.push({
+                                date_due: date.innerHTML
+                            });
                         }
                     } catch { }
                 });
@@ -79,9 +74,10 @@ let da_page = async () => {
             }
         }
 
+        console.log(scrapedData);
+
         return scrapedData;
-    }
-    catch (err) {
+    } catch (err) {
         console.error("Error in da_page:", err);
         throw err;
     }
