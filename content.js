@@ -1,94 +1,217 @@
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    if (request.action === "scrapeData") {
-        da_page().then(data => {
-            sendResponse({ success: true, data: data });
-        }).catch(error => {
-            sendResponse({ success: false, error: error.message });
-        });
-        return true;
-    }
-});
+console.log("Content script started");
 
-let da_page = async () => {
+async function fetchHtml(url, options = {}) {
     try {
-        let scrapedData = {
-            reg_no: "",
-            courses: []
-        };
-
-        // Scrape the registration number
-        if (document.getElementsByClassName("navbar-text text-light small fw-bold")[0] != undefined) {
-            scrapedData.reg_no = document.getElementsByClassName("navbar-text text-light small fw-bold")[0].innerText.replace("(STUDENT)", "").trim();
-        } else {
-            scrapedData.reg_no = document.getElementsByClassName("VTopHeaderStyle")[0].innerText.replace("(STUDENT)", "").trim();
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        let table = document.getElementsByClassName("customTable")[0].children[0];
-        let csrf;
-        try { csrf = document.getElementsByName("_csrf")[3].defaultValue; } catch { }
-
-        // Create an array to hold all fetch promises
-        let fetchPromises = [];
-
-        for (let i = 1; i < table.children.length; i++) {
-            let classid = table.children[i].children[1].innerHTML;
-
-            if (table.children[i].children[3].children.length != 1) {
-                // Create a fetch promise and push it to the array
-                fetchPromises.push(
-                    fetch(`${window.location.origin}/vtop/examinations/processDigitalAssignment`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                            "X-Requested-With": "XMLHttpRequest",
-                        },
-                        body: `authorizedID=${scrapedData.reg_no}&x=${new Date().toGMTString()}&classId=${classid}&_csrf=${csrf}`,
-                    }).then(response => response.text())
-                        .then(data => {
-                            let parser = new DOMParser();
-                            let doc = parser.parseFromString(data, "text/html");
-                            let table_inner = doc.getElementsByClassName("fixedContent tableContent");
-                            let course_code = doc.getElementsByClassName("fixedContent tableContent")[0].children[1].innerText;
-                            let course_title = doc.getElementsByClassName("fixedContent tableContent")[0].children[2].innerText;
-
-                            let due_dates = [];
-                            Array.from(table_inner).forEach((row) => {
-                                let date = row.childNodes[9].childNodes[1];
-                                let is_uploaded = true;
-                                let assessment_title = row.children[1].innerText; // Scraping assessment title
-                                try {
-                                    is_uploaded = row.children[6].children[0].innerHTML === "";
-                                } catch { }
-                                try {
-                                    if (date.style.color == "green" && is_uploaded) {
-                                        due_dates.push({
-                                            assessment_title: assessment_title, // Adding assessment title
-                                            date_due: date.innerHTML
-                                        });
-                                    }
-                                } catch { }
-                            });
-
-                            return {
-                                class_id: classid,
-                                course_code: course_code,
-                                course_title: course_title,
-                                due_dates: due_dates
-                            };
-                        })
-                );
-            }
-        }
-
-        // Wait for all fetches to complete
-        let courses = await Promise.all(fetchPromises);
-        scrapedData.courses = courses;
-
-        console.log(scrapedData);
-
-        return scrapedData;
-    } catch (err) {
-        console.error("Error in da_page:", err);
-        throw err;
+        return await response.text();
+    } catch (error) {
+        console.error(`Error fetching URL: ${url}`, error);
+        return null;
     }
-};
+}
+
+function extractCsrfTokenAndId(htmlString) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+
+    const csrfElement = doc.querySelector('input[name="_csrf"]');
+    const idElement = doc.querySelector('input[name="authorizedID"]');
+
+    if (!csrfElement || !idElement) {
+        console.error("CSRF token or ID element not found");
+        return null;
+    }
+
+    return {
+        csrfToken: csrfElement.value,
+        id: idElement.value,
+    };
+}
+
+async function getSemesterOptions() {
+    try {
+        const htmlText = await fetchHtml('https://vtop.vit.ac.in/vtop/content');
+        if (!htmlText) {
+            throw new Error('Failed to load content page');
+        }
+
+        const { csrfToken, id } = extractCsrfTokenAndId(htmlText) || {};
+
+        if (!csrfToken || !id) {
+            throw new Error('Failed to extract CSRF token or ID');
+        }
+
+        console.log('CSRF Token and ID extracted:', csrfToken, id);
+
+        const semesterHtml = await fetchHtml('https://vtop.vit.ac.in/vtop/examinations/StudentDA', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: `_csrf=${csrfToken}&authorizedID=${id}&verifyMenu=true&nocache=${new Date().getTime()}`,
+        });
+
+        if (!semesterHtml) {
+            throw new Error('Failed to load semester options');
+        }
+
+        const parser = new DOMParser();
+        const semesterDoc = parser.parseFromString(semesterHtml, 'text/html');
+
+        const selectElement = semesterDoc.querySelector('select[name="semesterSubId"]');
+
+        if (!selectElement) {
+            throw new Error('Failed to find semester dropdown');
+        }
+
+        const options = Array.from(selectElement.children).map(option => ({
+            value: option.value,
+            text: option.textContent,
+        }));
+
+        console.log('Semester options:', options);
+
+        createDropdown(options);
+
+    } catch (error) {
+        console.error('Error fetching semester options:', error);
+    }
+}
+
+function createDropdown(options) {
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.top = '10px';
+    container.style.right = '10px';
+    container.style.backgroundColor = 'white';
+    container.style.border = '1px solid #ccc';
+    container.style.padding = '10px';
+    container.style.zIndex = '9999';
+
+    const label = document.createElement('label');
+    label.textContent = 'Select Semester:';
+    container.appendChild(label);
+
+    const dropdown = document.createElement('select');
+    dropdown.id = 'semesterDropdown';
+    dropdown.style.marginTop = '5px';
+
+    options.forEach(option => {
+        const opt = document.createElement('option');
+        opt.value = option.value;
+        opt.textContent = option.text;
+        dropdown.appendChild(opt);
+    });
+
+    container.appendChild(dropdown);
+    document.body.appendChild(container);
+
+    dropdown.addEventListener('change', async (event) => {
+        const selectedSemester = event.target.value;
+        if (selectedSemester) {
+            console.log('Selected Semester:', selectedSemester);
+            await fetchClassIds(selectedSemester);
+        }
+    });
+}
+
+async function fetchClassIds(semesterSubId) {
+    try {
+        const { csrfToken, id } = extractCsrfTokenAndId(document.documentElement.innerHTML);
+        const formData = new URLSearchParams();
+        formData.append('authorizedID', id);
+        formData.append('semesterSubId', semesterSubId);
+        formData.append('_csrf', csrfToken);
+
+        const response = await fetch('https://vtop.vit.ac.in/vtop/examinations/doDigitalAssignment', {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            body: formData.toString(),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch class IDs: ${response.statusText}`);
+        }
+
+        const data = await response.text();
+        console.log('Class ID Data:', data);
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data, 'text/html');
+        const classIds = Array.from(doc.querySelectorAll('.tableContent td:nth-child(2)')).map(td => td.textContent.trim());
+
+        console.log('Extracted Class IDs:', classIds);
+
+        const scrapedData = await scrapeDigitalAssignments(classIds, id, csrfToken);
+        console.log('Scraped Digital Assignment Data:', scrapedData);
+
+    } catch (error) {
+        console.error('Error fetching class IDs:', error);
+    }
+}
+
+async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
+    const fetchPromises = classIds.map(classId =>
+        fetch(`https://vtop.vit.ac.in/vtop/examinations/processDigitalAssignment`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            body: `authorizedID=${authorizedID}&x=${new Date().toGMTString()}&classId=${classId}&_csrf=${csrfToken}`,
+        })
+            .then(response => response.text())
+            .then(data => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const table_inner = doc.getElementsByClassName("fixedContent tableContent");
+                const course_code = doc.getElementsByClassName("fixedContent tableContent")[0].children[1].innerText;
+                const course_title = doc.getElementsByClassName("fixedContent tableContent")[0].children[2].innerText;
+
+                let due_dates = [];
+                Array.from(table_inner).forEach((row) => {
+                    let date = row.childNodes[9].childNodes[1];
+                    let is_uploaded = true;
+                    let assessment_title = row.children[1].innerText; 
+
+
+
+
+
+                    try {
+                        is_uploaded = row.children[6].children[0].innerHTML === "";
+                    } catch { }
+                    try {
+                        if (date.style.color == "green" && is_uploaded) {
+                            due_dates.push({
+                                assessment_title: assessment_title, 
+                                date_due: date.innerHTML
+                            });
+                        }
+                    } catch { }
+                });
+
+                return {
+                    class_id: classId,
+                    course_code: course_code,
+                    course_title: course_title,
+                    due_dates: due_dates
+                };
+            })
+    );
+
+    const courses = await Promise.all(fetchPromises);
+    return {
+        reg_no: authorizedID,
+        courses: courses
+    };
+}
+
+getSemesterOptions();
