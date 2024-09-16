@@ -238,7 +238,7 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
 }
 async function login(uid) {
     try {
-        const response = await fetch(`http://localhost:8000/login?uid=${uid}`, {
+        const response = await fetch(`https://assignofast-backend.vercel.app/login?uid=${uid}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -289,7 +289,7 @@ async function formatAndSendData(data, token) {
     try {
         console.log('Token being used:', token);
         
-        const response = await fetch('http://localhost:8000/set-da', {
+        const response = await fetch('https://assignofast-backend.vercel.app/set-da', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
