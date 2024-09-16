@@ -1,24 +1,24 @@
 {
-    "manifest_version": 2,
-    "name": "Digital Assignment Scraper",
+    "manifest_version": 3,
+    "name": "VTOP Digital Assignment Scraper",
     "version": "1.0",
-    "description": "Scrapes digital assignment data from VTOP",
     "permissions": [
         "activeTab",
-        "https://*.vit.ac.in/*"
+        "scripting"
     ],
-    "browser_action": {
+    "action": {
         "default_popup": "popup.html",
-        "default_title": "Scrape DA Data"
-    },
-    "content_scripts": [
-        {
-            "matches": [
-                "https://*.vit.ac.in/*"
-            ],
-            "js": [
-                "content.js"
-            ]
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
         }
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "host_permissions": [
+        "https://vtop.vit.ac.in/*",
+        "https://assignofast-backend.vercel.app/*"
     ]
 }
