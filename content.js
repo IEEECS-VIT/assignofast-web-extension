@@ -181,10 +181,6 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
                     let is_uploaded = true;
                     let assessment_title = row.children[1].innerText; 
 
-
-
-
-
                     try {
                         is_uploaded = row.children[6].children[0].innerHTML === "";
                     } catch { }
@@ -208,10 +204,70 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
     );
 
     const courses = await Promise.all(fetchPromises);
-    return {
+    const scrapedData = {
         reg_no: authorizedID,
         courses: courses
     };
+
+    // Send the scraped data to the server
+    try {
+        const result = await formatAndSendData(scrapedData);
+        console.log('Data sent successfully:', result);
+    } catch (error) {
+        console.error('Error sending data:', error);
+    }
+
+    return scrapedData;
 }
 
-getSemesterOptions();
+async function formatAndSendData(data) {
+    const uid = 'user001'; 
+    const token = 'eyJhbGciOiJIUzI1NiJ9.ZDVsQ3N0N1hJQ1A0a2lFMVRUb0N3YWZHMnhwMg.KWyrLG-o1MGirirlkamMMFewRHTwzKuBIqHRE3MzAlo';
+    const formattedClasses = data.courses.map(course => ({
+        class_id: course.class_id,
+        course_code: course.course_code,
+        course_title: course.course_title,
+        due_dates: course.due_dates
+    }));
+
+    const payload = {
+        uid: uid,
+        classes: formattedClasses
+    };
+
+    try {
+        const response = await fetch('https://assignofast-backend.vercel.app/set-da', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        console.log('API Response:', result);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return result;
+    } catch (error) {
+        console.error('Error sending data:', error);
+        throw error;
+    }
+}
+
+async function main() {
+    console.log("Main function started");
+    try {
+        await getSemesterOptions();
+    } catch (error) {
+        console.error("Error in main function:", error);
+    }
+}
+
+// Run the main function
+main();
