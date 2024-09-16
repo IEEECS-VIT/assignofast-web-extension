@@ -171,34 +171,50 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
             .then(data => {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(data, 'text/html');
-                const table_inner = doc.getElementsByClassName("fixedContent tableContent");
-                const course_code = doc.getElementsByClassName("fixedContent tableContent")[0].children[1].innerText;
-                const course_title = doc.getElementsByClassName("fixedContent tableContent")[0].children[2].innerText;
+                const tableRows = doc.querySelectorAll(".fixedContent.tableContent");
+                
+                let course_code = '';
+                let course_title = '';
+                let assignments = [];
 
-                let due_dates = [];
-                Array.from(table_inner).forEach((row) => {
-                    let date = row.childNodes[9].childNodes[1];
-                    let is_uploaded = true;
-                    let assessment_title = row.children[1].innerText; 
+                if (tableRows.length > 0) {
+                    const firstRow = tableRows[0];
+                    course_code = firstRow.children[1]?.innerText || 'N/A';
+                    course_title = firstRow.children[2]?.innerText || 'N/A';
+                }
 
-                    try {
-                        is_uploaded = row.children[6].children[0].innerHTML === "";
-                    } catch { }
-                    try {
-                        if (date.style.color == "green" && is_uploaded) {
-                            due_dates.push({
-                                assessment_title: assessment_title, 
-                                date_due: date.innerHTML
-                            });
-                        }
-                    } catch { }
+                tableRows.forEach((row, index) => {
+                    if (index === 0) return; // Skip the first row as it contains course info
+
+                    const assessmentTitle = row.children[1]?.innerText?.trim() || 'N/A';
+                    const dateElement = row.children[4]?.querySelector('span');
+                    const dateDue = dateElement?.innerText?.trim() || 'N/A';
+                    const dateColor = dateElement?.style.color;
+                    const lastUpdated = row.children[6]?.innerText?.trim() || '';
+                    const isSubmitted = lastUpdated !== '';
+
+                    // Include all assignments, regardless of due date color
+                    assignments.push({
+                        assessment_title: assessmentTitle,
+                        date_due: dateDue,
+                        is_submitted: isSubmitted,
+                        last_updated: lastUpdated,
+                        status: dateColor === 'red' ? 'past_due' : 'upcoming'
+                    });
                 });
 
                 return {
                     class_id: classId,
                     course_code: course_code,
                     course_title: course_title,
-                    due_dates: due_dates
+                    duedates: assignments
+                };
+            })
+            .catch(error => {
+                console.error(`Error processing class ID ${classId}:`, error);
+                return {
+                    class_id: classId,
+                    error: error.message
                 };
             })
     );
@@ -206,7 +222,7 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
     const courses = await Promise.all(fetchPromises);
     const scrapedData = {
         reg_no: authorizedID,
-        courses: courses
+        courses: courses.filter(course => !course.error)
     };
 
     // Send the scraped data to the server
@@ -220,10 +236,9 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
 
     return scrapedData;
 }
-
 async function login(uid) {
     try {
-        const response = await fetch(`https://assignofast-backend.vercel.app/login?uid=${uid}`, {
+        const response = await fetch(`http://localhost:8000/login?uid=${uid}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -242,25 +257,39 @@ async function login(uid) {
         throw error;
     }
 }
-
 async function formatAndSendData(data, token) {
     const uid = data.reg_no; 
-    const formattedClasses = data.courses.map(course => ({
-        class_id: course.class_id,
-        course_code: course.course_code,
-        course_title: course.course_title,
-        due_dates: course.due_dates
-    }));
+    const formattedClasses = data.courses.map(course => {
+        // Ensure all required fields are present
+        if (!course.class_id || !course.course_code || !course.course_title || !Array.isArray(course.duedates)) {
+            console.error('Invalid course data:', course);
+            return null; // Skip this course
+        }
+
+        // Ensure each duedate has the required fields
+        const validDuedates = course.duedates.filter(duedate => 
+            duedate.assessment_title && duedate.date_due !== undefined
+        );
+
+        return {
+            class_id: course.class_id,
+            course_code: course.course_code,
+            course_title: course.course_title,
+            duedates: validDuedates
+        };
+    }).filter(course => course !== null); // Remove any null courses
 
     const payload = {
         uid: uid,
         classes: formattedClasses
     };
 
+    console.log('Payload being sent:', payload);
+
     try {
         console.log('Token being used:', token);
         
-        const response = await fetch('https://assignofast-backend.vercel.app/set-da', {
+        const response = await fetch('http://localhost:8000/set-da', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
