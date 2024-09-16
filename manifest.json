@@ -18,6 +18,7 @@
         "service_worker": "background.js"
     },
     "host_permissions": [
-        "https://vtop.vit.ac.in/*"
+        "https://vtop.vit.ac.in/*",
+        "https://assignofast-backend.vercel.app/*"
     ]
 }
