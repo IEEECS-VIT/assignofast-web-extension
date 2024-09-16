@@ -211,7 +211,8 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
 
     // Send the scraped data to the server
     try {
-        const result = await formatAndSendData(scrapedData);
+        const token = await login(authorizedID); // Get a fresh token
+        const result = await formatAndSendData(scrapedData, token);
         console.log('Data sent successfully:', result);
     } catch (error) {
         console.error('Error sending data:', error);
@@ -220,9 +221,30 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
     return scrapedData;
 }
 
-async function formatAndSendData(data) {
-    const uid = 'user001'; 
-    const token = 'eyJhbGciOiJIUzI1NiJ9.ZDVsQ3N0N1hJQ1A0a2lFMVRUb0N3YWZHMnhwMg.KWyrLG-o1MGirirlkamMMFewRHTwzKuBIqHRE3MzAlo';
+async function login(uid) {
+    try {
+        const response = await fetch(`https://assignofast-backend.vercel.app/login?uid=${uid}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Login Response:', result);
+        return result.token;
+    } catch (error) {
+        console.error('Error during login:', error);
+        throw error;
+    }
+}
+
+async function formatAndSendData(data, token) {
+    const uid = data.reg_no; 
     const formattedClasses = data.courses.map(course => ({
         class_id: course.class_id,
         course_code: course.course_code,
@@ -236,22 +258,24 @@ async function formatAndSendData(data) {
     };
 
     try {
+        console.log('Token being used:', token);
+        
         const response = await fetch('https://assignofast-backend.vercel.app/set-da', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}` 
-
             },
             body: JSON.stringify(payload)
         });
 
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
         const result = await response.json();
         console.log('API Response:', result);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
 
         return result;
     } catch (error) {
@@ -264,6 +288,7 @@ async function main() {
     console.log("Main function started");
     try {
         await getSemesterOptions();
+        // The rest of the process will be triggered by user selecting a semester
     } catch (error) {
         console.error("Error in main function:", error);
     }
