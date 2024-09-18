@@ -6,64 +6,58 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Load saved settings
     try {
-        const savedSettings = await chrome.storage.local.get(['currentSemester', 'autoScrap']);
+        const savedSettings = await chrome.storage.local.get(['currentSemester', 'autoScrap', 'semesterOptions']);
         if (savedSettings.currentSemester) {
             currentSemesterSpan.textContent = savedSettings.currentSemester;
         }
         autoScrapToggle.checked = savedSettings.autoScrap || false;
+
+        // Populate semester options
+        if (savedSettings.semesterOptions && Array.isArray(savedSettings.semesterOptions)) {
+            savedSettings.semesterOptions.forEach(option => {
+                const optElement = document.createElement('option');
+                optElement.value = option.value;
+                optElement.textContent = option.text;
+                semesterSelect.appendChild(optElement);
+            });
+
+            if (savedSettings.currentSemester) {
+                semesterSelect.value = savedSettings.currentSemester;
+            }
+        } else {
+            semesterSelect.innerHTML = '<option value="">No options available</option>';
+        }
     } catch (error) {
         console.error('Error loading saved settings:', error);
-        // Set default values if storage access fails
         currentSemesterSpan.textContent = 'None';
         autoScrapToggle.checked = false;
     }
 
-    // Fetch semester options
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-        chrome.tabs.sendMessage(tabs[0].id, {action: "getSemesterOptions"}, (response) => {
-            if (response && Array.isArray(response)) {
-                response.forEach(option => {
-                    const optElement = document.createElement('option');
-                    optElement.value = option.value;
-                    optElement.textContent = option.text;
-                    semesterSelect.appendChild(optElement);
-                });
-
-                // Set selected semester if saved
-                chrome.storage.local.get(['currentSemester'], (result) => {
-                    if (result.currentSemester) {
-                        semesterSelect.value = result.currentSemester;
-                    }
-                });
-            } else {
-                console.error("Failed to fetch semester options");
-                semesterSelect.innerHTML = '<option value="">Failed to load options</option>';
-            }
-        });
-    });
-
     // Event listeners
-    semesterSelect.addEventListener('change', (event) => {
+    semesterSelect.addEventListener('change', async (event) => {
         const selectedSemester = event.target.value;
         currentSemesterSpan.textContent = selectedSemester;
-        chrome.storage.local.set({currentSemester: selectedSemester}, () => {
-            if (chrome.runtime.lastError) {
-                console.error('Error saving semester:', chrome.runtime.lastError);
-            }
-        });
+        try {
+            await chrome.storage.local.set({currentSemester: selectedSemester});
+        } catch (error) {
+            console.error('Error saving semester:', error);
+        }
     });
 
-    autoScrapToggle.addEventListener('change', (event) => {
-        chrome.storage.local.set({autoScrap: event.target.checked}, () => {
-            if (chrome.runtime.lastError) {
-                console.error('Error saving auto-scrap setting:', chrome.runtime.lastError);
-            }
-        });
+    autoScrapToggle.addEventListener('change', async (event) => {
+        try {
+            await chrome.storage.local.set({autoScrap: event.target.checked});
+        } catch (error) {
+            console.error('Error saving auto-scrap setting:', error);
+        }
     });
 
-    manualScrapButton.addEventListener('click', () => {
-        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-            chrome.tabs.sendMessage(tabs[0].id, {action: "manualScrap"});
-        });
+    manualScrapButton.addEventListener('click', async () => {
+        try {
+            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+            await chrome.tabs.sendMessage(tab.id, {action: "manualScrap"});
+        } catch (error) {
+            console.error('Error triggering manual scrap:', error);
+        }
     });
 });

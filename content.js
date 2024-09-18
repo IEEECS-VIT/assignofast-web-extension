@@ -1,5 +1,7 @@
 console.log("Content script started");
 
+let hasRun = false;
+
 async function fetchHtml(url, options = {}) {
     try {
         const response = await fetch(url, options);
@@ -83,43 +85,6 @@ async function getSemesterOptions() {
     }
 }
 
-
-function createDropdown(options) {
-    const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.top = '10px';
-    container.style.right = '10px';
-    container.style.backgroundColor = 'white';
-    container.style.border = '1px solid #ccc';
-    container.style.padding = '10px';
-    container.style.zIndex = '9999';
-
-    const label = document.createElement('label');
-    label.textContent = 'Select Semester:';
-    container.appendChild(label);
-
-    const dropdown = document.createElement('select');
-    dropdown.id = 'semesterDropdown';
-    dropdown.style.marginTop = '5px';
-
-    options.forEach(option => {
-        const opt = document.createElement('option');
-        opt.value = option.value;
-        opt.textContent = option.text;
-        dropdown.appendChild(opt);
-    });
-
-    container.appendChild(dropdown);
-    document.body.appendChild(container);
-
-    dropdown.addEventListener('change', async (event) => {
-        const selectedSemester = event.target.value;
-        if (selectedSemester) {
-            console.log('Selected Semester:', selectedSemester);
-            await fetchClassIds(selectedSemester);
-        }
-    });
-}
 async function fetchClassIds(semesterSubId, authorizedID, csrfToken) {
     try {
         const formData = new URLSearchParams();
@@ -156,9 +121,10 @@ async function fetchClassIds(semesterSubId, authorizedID, csrfToken) {
         return classIds;
     } catch (error) {
         console.error('Error in fetchClassIds:', error);
-        throw error; // Re-throw the error to be caught in scrapeAndSendData
+        throw error;
     }
 }
+
 async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
     const fetchPromises = classIds.map(classId =>
         fetch(`https://vtop.vit.ac.in/vtop/examinations/processDigitalAssignment`, {
@@ -186,7 +152,7 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
                 }
 
                 tableRows.forEach((row, index) => {
-                    if (index === 0) return; // Skip the first row as it contains course info
+                    if (index === 0) return;
 
                     const assessmentTitle = row.children[1]?.innerText?.trim() || 'N/A';
                     const dateElement = row.children[4]?.querySelector('span');
@@ -195,7 +161,6 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
                     const lastUpdated = row.children[6]?.innerText?.trim() || '';
                     const isSubmitted = lastUpdated !== '';
 
-                    // Include all assignments, regardless of due date color
                     assignments.push({
                         assessment_title: assessmentTitle,
                         date_due: dateDue,
@@ -227,17 +192,9 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
         courses: courses.filter(course => !course.error)
     };
 
-    // Send the scraped data to the server
-    try {
-        const token = await login(authorizedID); // Get a fresh token
-        const result = await formatAndSendData(scrapedData, token);
-        console.log('Data sent successfully:', result);
-    } catch (error) {
-        console.error('Error sending data:', error);
-    }
-
     return scrapedData;
 }
+
 async function login(uid) {
     try {
         const response = await fetch(`https://assignofast-backend.vercel.app/login?uid=${uid}`, {
@@ -259,16 +216,15 @@ async function login(uid) {
         throw error;
     }
 }
+
 async function formatAndSendData(data, token) {
     const uid = data.reg_no; 
     const formattedClasses = data.courses.map(course => {
-        // Ensure all required fields are present
         if (!course.class_id || !course.course_code || !course.course_title || !Array.isArray(course.duedates)) {
             console.error('Invalid course data:', course);
-            return null; // Skip this course
+            return null;
         }
 
-        // Ensure each duedate has the required fields
         const validDuedates = course.duedates.filter(duedate => 
             duedate.assessment_title && duedate.date_due !== undefined
         );
@@ -279,7 +235,7 @@ async function formatAndSendData(data, token) {
             course_title: course.course_title,
             duedates: validDuedates
         };
-    }).filter(course => course !== null); // Remove any null courses
+    }).filter(course => course !== null);
 
     const payload = {
         uid: uid,
@@ -292,7 +248,7 @@ async function formatAndSendData(data, token) {
         console.log('Token being used:', token);
         
         const response = await fetch('https://assignofast-backend.vercel.app/set-da', {
-            method: 'POST',
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}` 
@@ -316,18 +272,28 @@ async function formatAndSendData(data, token) {
 }
 
 async function main() {
+    if (hasRun) return;
+    hasRun = true;
+
     console.log("Main function started");
     try {
-        const settings = await chrome.storage.local.get(['currentSemester', 'autoScrap']);
-        
-        if (settings.autoScrap && settings.currentSemester && window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
-            console.log("Auto-scraping triggered");
-            await scrapeAndSendData(settings.currentSemester);
+        if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
+            const settings = await chrome.storage.local.get(['currentSemester', 'autoScrap']);
+            
+            // Always fetch semester options when the content page loads
+            const semesterOptions = await getSemesterOptions();
+            await chrome.storage.local.set({ semesterOptions });
+
+            if (settings.autoScrap && settings.currentSemester) {
+                console.log("Auto-scraping triggered");
+                await scrapeAndSendData(settings.currentSemester);
+            }
         }
     } catch (error) {
         console.error("Error in main function:", error);
     }
 }
+
 async function scrapeAndSendData(semesterSubId) {
     try {
         const { csrfToken, id } = extractCsrfTokenAndId(document.documentElement.innerHTML);
@@ -340,20 +306,17 @@ async function scrapeAndSendData(semesterSubId) {
             throw new Error('No class IDs fetched');
         }
 
+        const token = await login(id);
         const scrapedData = await scrapeDigitalAssignments(classIds, id, csrfToken);
         console.log('Scraped Digital Assignment Data:', scrapedData);
 
-        // Send the scraped data to the server
-        const token = await login(id);
         const result = await formatAndSendData(scrapedData, token);
         console.log('Data sent successfully:', result);
     } catch (error) {
         console.error('Error in scrapeAndSendData:', error);
-        // You might want to notify the user about the error here
     }
 }
 
-// Listen for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "manualScrap") {
         chrome.storage.local.get(['currentSemester'], async (result) => {
@@ -364,19 +327,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
         });
     } else if (request.action === "getSemesterOptions") {
-        getSemesterOptions().then(options => {
-            sendResponse(options);
+        chrome.storage.local.get(['semesterOptions'], (result) => {
+            sendResponse(result.semesterOptions || []);
         });
         return true; // Indicates that the response is asynchronous
     }
 });
 
-// Run the main function
-main();
+document.addEventListener('DOMContentLoaded', main);
 
-// Add a MutationObserver to check for page changes
 const observer = new MutationObserver(() => {
-    if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
+    if (!hasRun && window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
         main();
     }
 });
