@@ -1,15 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTOP Scraper</title>
+    <title>VIT Digital Assignment Scraper</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <button id="startScraping">Start Scraping</button>
+    <h1>VIT Digital Assignment Scraper</h1>
+    <div>
+        <label for="semesterSelect">Select Semester:</label>
+        <select id="semesterSelect"></select>
+    </div>
+    <div>
+        <p>Current Semester: <span id="currentSemester">None</span></p>
+    </div>
+    <div class="switch-container">
+        <label class="switch">
+            <input type="checkbox" id="autoScrapToggle">
+            <span class="slider round"></span>
+        </label>
+        <span>Auto-Scraping</span>
+    </div>
+    <button id="manualScrapButton">Manual Scrap</button>
     <script src="popup.js"></script>
 </body>
-
 </html>

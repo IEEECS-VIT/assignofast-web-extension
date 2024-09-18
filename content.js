@@ -75,12 +75,14 @@ async function getSemesterOptions() {
 
         console.log('Semester options:', options);
 
-        createDropdown(options);
+        return options;
 
     } catch (error) {
         console.error('Error fetching semester options:', error);
+        return [];
     }
 }
+
 
 function createDropdown(options) {
     const container = document.createElement('div');
@@ -118,12 +120,10 @@ function createDropdown(options) {
         }
     });
 }
-
-async function fetchClassIds(semesterSubId) {
+async function fetchClassIds(semesterSubId, authorizedID, csrfToken) {
     try {
-        const { csrfToken, id } = extractCsrfTokenAndId(document.documentElement.innerHTML);
         const formData = new URLSearchParams();
-        formData.append('authorizedID', id);
+        formData.append('authorizedID', authorizedID);
         formData.append('semesterSubId', semesterSubId);
         formData.append('_csrf', csrfToken);
 
@@ -149,14 +149,16 @@ async function fetchClassIds(semesterSubId) {
 
         console.log('Extracted Class IDs:', classIds);
 
-        const scrapedData = await scrapeDigitalAssignments(classIds, id, csrfToken);
-        console.log('Scraped Digital Assignment Data:', scrapedData);
+        if (classIds.length === 0) {
+            throw new Error('No class IDs found');
+        }
 
+        return classIds;
     } catch (error) {
-        console.error('Error fetching class IDs:', error);
+        console.error('Error in fetchClassIds:', error);
+        throw error; // Re-throw the error to be caught in scrapeAndSendData
     }
 }
-
 async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
     const fetchPromises = classIds.map(classId =>
         fetch(`https://vtop.vit.ac.in/vtop/examinations/processDigitalAssignment`, {
@@ -316,12 +318,67 @@ async function formatAndSendData(data, token) {
 async function main() {
     console.log("Main function started");
     try {
-        await getSemesterOptions();
-        // The rest of the process will be triggered by user selecting a semester
+        const settings = await chrome.storage.local.get(['currentSemester', 'autoScrap']);
+        
+        if (settings.autoScrap && settings.currentSemester && window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
+            console.log("Auto-scraping triggered");
+            await scrapeAndSendData(settings.currentSemester);
+        }
     } catch (error) {
         console.error("Error in main function:", error);
     }
 }
+async function scrapeAndSendData(semesterSubId) {
+    try {
+        const { csrfToken, id } = extractCsrfTokenAndId(document.documentElement.innerHTML);
+        if (!csrfToken || !id) {
+            throw new Error('Failed to extract CSRF token or ID');
+        }
+
+        const classIds = await fetchClassIds(semesterSubId, id, csrfToken);
+        if (!classIds || classIds.length === 0) {
+            throw new Error('No class IDs fetched');
+        }
+
+        const scrapedData = await scrapeDigitalAssignments(classIds, id, csrfToken);
+        console.log('Scraped Digital Assignment Data:', scrapedData);
+
+        // Send the scraped data to the server
+        const token = await login(id);
+        const result = await formatAndSendData(scrapedData, token);
+        console.log('Data sent successfully:', result);
+    } catch (error) {
+        console.error('Error in scrapeAndSendData:', error);
+        // You might want to notify the user about the error here
+    }
+}
+
+// Listen for messages from the popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "manualScrap") {
+        chrome.storage.local.get(['currentSemester'], async (result) => {
+            if (result.currentSemester) {
+                await scrapeAndSendData(result.currentSemester);
+            } else {
+                console.error("No semester selected for manual scraping");
+            }
+        });
+    } else if (request.action === "getSemesterOptions") {
+        getSemesterOptions().then(options => {
+            sendResponse(options);
+        });
+        return true; // Indicates that the response is asynchronous
+    }
+});
 
 // Run the main function
 main();
+
+// Add a MutationObserver to check for page changes
+const observer = new MutationObserver(() => {
+    if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
+        main();
+    }
+});
+
+observer.observe(document.body, { childList: true, subtree: true });

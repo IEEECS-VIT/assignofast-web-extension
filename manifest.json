@@ -4,7 +4,8 @@
     "version": "1.0",
     "permissions": [
         "activeTab",
-        "scripting"
+        "scripting",
+        "storage"
     ],
     "action": {
         "default_popup": "popup.html",
@@ -17,6 +18,12 @@
     "background": {
         "service_worker": "background.js"
     },
+    "content_scripts": [
+        {
+            "matches": ["https://vtop.vit.ac.in/*"],
+            "js": ["content.js"]
+        }
+    ],
     "host_permissions": [
         "https://vtop.vit.ac.in/*",
         "https://assignofast-backend.vercel.app/*"
