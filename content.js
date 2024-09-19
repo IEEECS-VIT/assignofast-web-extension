@@ -317,15 +317,31 @@ async function scrapeAndSendData(semesterSubId) {
     }
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "manualScrap") {
-        chrome.storage.local.get(['currentSemester'], async (result) => {
-            if (result.currentSemester) {
-                await scrapeAndSendData(result.currentSemester);
-            } else {
-                console.error("No semester selected for manual scraping");
+async function main() {
+    if (hasRun) return;
+    hasRun = true;
+
+    console.log("Main function started");
+    try {
+        if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
+            // Always fetch semester options when the content page loads
+            const semesterOptions = await getSemesterOptions();
+            await chrome.storage.local.set({ semesterOptions });
+
+            // Check if there's a current semester and trigger set-da
+            const { currentSemester } = await chrome.storage.local.get(['currentSemester']);
+            if (currentSemester) {
+                await scrapeAndSendData(currentSemester);
             }
-        });
+        }
+    } catch (error) {
+        console.error("Error in main function:", error);
+    }
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "triggerSetDa") {
+        scrapeAndSendData(request.semester);
     } else if (request.action === "getSemesterOptions") {
         chrome.storage.local.get(['semesterOptions'], (result) => {
             sendResponse(result.semesterOptions || []);

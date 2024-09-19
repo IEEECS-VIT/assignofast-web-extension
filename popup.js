@@ -1,16 +1,13 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const semesterSelect = document.getElementById('semesterSelect');
     const currentSemesterSpan = document.getElementById('currentSemester');
-    const autoScrapToggle = document.getElementById('autoScrapToggle');
-    const manualScrapButton = document.getElementById('manualScrapButton');
 
     // Load saved settings
     try {
-        const savedSettings = await chrome.storage.local.get(['currentSemester', 'autoScrap', 'semesterOptions']);
+        const savedSettings = await chrome.storage.local.get(['currentSemester', 'semesterOptions']);
         if (savedSettings.currentSemester) {
             currentSemesterSpan.textContent = savedSettings.currentSemester;
         }
-        autoScrapToggle.checked = savedSettings.autoScrap || false;
 
         // Populate semester options
         if (savedSettings.semesterOptions && Array.isArray(savedSettings.semesterOptions)) {
@@ -30,34 +27,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error('Error loading saved settings:', error);
         currentSemesterSpan.textContent = 'None';
-        autoScrapToggle.checked = false;
     }
 
-    // Event listeners
+    // Event listener for semester selection
     semesterSelect.addEventListener('change', async (event) => {
         const selectedSemester = event.target.value;
         currentSemesterSpan.textContent = selectedSemester;
         try {
             await chrome.storage.local.set({currentSemester: selectedSemester});
-        } catch (error) {
-            console.error('Error saving semester:', error);
-        }
-    });
-
-    autoScrapToggle.addEventListener('change', async (event) => {
-        try {
-            await chrome.storage.local.set({autoScrap: event.target.checked});
-        } catch (error) {
-            console.error('Error saving auto-scrap setting:', error);
-        }
-    });
-
-    manualScrapButton.addEventListener('click', async () => {
-        try {
+            // Trigger set-da operation
             const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-            await chrome.tabs.sendMessage(tab.id, {action: "manualScrap"});
+            await chrome.tabs.sendMessage(tab.id, {action: "triggerSetDa", semester: selectedSemester});
         } catch (error) {
-            console.error('Error triggering manual scrap:', error);
+            console.error('Error saving semester or triggering set-da:', error);
         }
     });
 });
