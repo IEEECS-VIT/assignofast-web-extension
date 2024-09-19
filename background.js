@@ -1,7 +1,13 @@
+chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason === "install") {
+        chrome.tabs.create({ url: "signin.html" });
+    }
+});
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "getSemesterOptions") {
-        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-            chrome.tabs.sendMessage(tabs[0].id, {action: "getSemesterOptions"}, (response) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.tabs.sendMessage(tabs[0].id, { action: "getSemesterOptions" }, (response) => {
                 sendResponse(response);
             });
         });

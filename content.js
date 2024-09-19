@@ -343,3 +343,12 @@ const observer = new MutationObserver(() => {
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
+
+chrome.storage.local.get(['uid'], function (result) {
+    if (result.uid) {
+        console.log('User UID:', result.uid);
+        // Use this UID to send data to your database
+    } else {
+        console.log('No UID found. User might not be signed in.');
+    }
+});
