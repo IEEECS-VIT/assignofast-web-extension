@@ -4,7 +4,6 @@
     "version": "1.0",
     "permissions": [
         "activeTab",
-        "scripting",
         "storage"
     ],
     "action": {
@@ -14,9 +13,6 @@
             "48": "icons/icon48.png",
             "128": "icons/icon128.png"
         }
-    },
-    "background": {
-        "service_worker": "background.js"
     },
     "content_scripts": [
         {
