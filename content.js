@@ -218,14 +218,14 @@ async function login(uid) {
 }
 
 async function formatAndSendData(data, token) {
-    const uid = data.reg_no; 
+    // Remove the uid extraction from data.reg_no
     const formattedClasses = data.courses.map(course => {
         if (!course.class_id || !course.course_code || !course.course_title || !Array.isArray(course.duedates)) {
             console.error('Invalid course data:', course);
             return null;
         }
 
-        const validDuedates = course.duedates.filter(duedate => 
+        const validDuedates = course.duedates.filter(duedate =>
             duedate.assessment_title && duedate.date_due !== undefined
         );
 
@@ -237,6 +237,8 @@ async function formatAndSendData(data, token) {
         };
     }).filter(course => course !== null);
 
+    const { uid } = await chrome.storage.local.get(['uid']);
+
     const payload = {
         uid: uid,
         classes: formattedClasses
@@ -246,12 +248,12 @@ async function formatAndSendData(data, token) {
 
     try {
         console.log('Token being used:', token);
-        
+
         const response = await fetch('https://assignofast-backend.vercel.app/set-da', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(payload)
         });
@@ -268,6 +270,35 @@ async function formatAndSendData(data, token) {
     } catch (error) {
         console.error('Error sending data:', error);
         throw error;
+    }
+}
+
+async function scrapeAndSendData(semesterSubId) {
+    try {
+        const { csrfToken, id } = extractCsrfTokenAndId(document.documentElement.innerHTML);
+        if (!csrfToken || !id) {
+            throw new Error('Failed to extract CSRF token or ID');
+        }
+
+        const classIds = await fetchClassIds(semesterSubId, id, csrfToken);
+        if (!classIds || classIds.length === 0) {
+            throw new Error('No class IDs fetched');
+        }
+
+        // Get the UID from Chrome storage
+        const { uid } = await chrome.storage.local.get(['uid']);
+        if (!uid) {
+            throw new Error('UID not found in storage');
+        }
+
+        const token = await login(uid);
+        const scrapedData = await scrapeDigitalAssignments(classIds, id, csrfToken);
+        console.log('Scraped Digital Assignment Data:', scrapedData);
+
+        const result = await formatAndSendData(scrapedData, token);
+        console.log('Data sent successfully:', result);
+    } catch (error) {
+        console.error('Error in scrapeAndSendData:', error);
     }
 }
 
@@ -294,28 +325,6 @@ async function main() {
     }
 }
 
-async function scrapeAndSendData(semesterSubId) {
-    try {
-        const { csrfToken, id } = extractCsrfTokenAndId(document.documentElement.innerHTML);
-        if (!csrfToken || !id) {
-            throw new Error('Failed to extract CSRF token or ID');
-        }
-
-        const classIds = await fetchClassIds(semesterSubId, id, csrfToken);
-        if (!classIds || classIds.length === 0) {
-            throw new Error('No class IDs fetched');
-        }
-
-        const token = await login(id);
-        const scrapedData = await scrapeDigitalAssignments(classIds, id, csrfToken);
-        console.log('Scraped Digital Assignment Data:', scrapedData);
-
-        const result = await formatAndSendData(scrapedData, token);
-        console.log('Data sent successfully:', result);
-    } catch (error) {
-        console.error('Error in scrapeAndSendData:', error);
-    }
-}
 
 async function main() {
     if (hasRun) return;
