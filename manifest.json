@@ -4,7 +4,9 @@
     "version": "1.0",
     "permissions": [
         "activeTab",
-        "storage"
+        "scripting",
+        "storage",
+        "identity"
     ],
     "action": {
         "default_popup": "popup.html",
@@ -14,14 +16,28 @@
             "128": "icons/icon128.png"
         }
     },
+    "background": {
+        "service_worker": "background.js"
+    },
     "content_scripts": [
         {
-            "matches": ["https://vtop.vit.ac.in/*"],
-            "js": ["content.js"]
+            "matches": [
+                "https://vtop.vit.ac.in/*"
+            ],
+            "js": [
+                "content.js"
+            ]
         }
     ],
     "host_permissions": [
         "https://vtop.vit.ac.in/*",
         "https://assignofast-backend.vercel.app/*"
-    ]
+    ],
+    "oauth2": {
+        "client_id": "889572280066-5iih89301psbttbjhl2123942nn1f9dk.apps.googleusercontent.com",
+        "scopes": [
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile"
+        ]
+    }
 }

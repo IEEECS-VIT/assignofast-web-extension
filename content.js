@@ -218,14 +218,14 @@ async function login(uid) {
 }
 
 async function formatAndSendData(data, token) {
-    const uid = data.reg_no; 
+    // Remove the uid extraction from data.reg_no
     const formattedClasses = data.courses.map(course => {
         if (!course.class_id || !course.course_code || !course.course_title || !Array.isArray(course.duedates)) {
             console.error('Invalid course data:', course);
             return null;
         }
 
-        const validDuedates = course.duedates.filter(duedate => 
+        const validDuedates = course.duedates.filter(duedate =>
             duedate.assessment_title && duedate.date_due !== undefined
         );
 
@@ -237,6 +237,8 @@ async function formatAndSendData(data, token) {
         };
     }).filter(course => course !== null);
 
+    const { uid } = await chrome.storage.local.get(['uid']);
+
     const payload = {
         uid: uid,
         classes: formattedClasses
@@ -246,12 +248,12 @@ async function formatAndSendData(data, token) {
 
     try {
         console.log('Token being used:', token);
-        
+
         const response = await fetch('https://assignofast-backend.vercel.app/set-da', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(payload)
         });
@@ -271,29 +273,6 @@ async function formatAndSendData(data, token) {
     }
 }
 
-async function main() {
-    if (hasRun) return;
-    hasRun = true;
-
-    console.log("Main function started");
-    try {
-        if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
-            const settings = await chrome.storage.local.get(['currentSemester', 'autoScrap']);
-            
-            // Always fetch semester options when the content page loads
-            const semesterOptions = await getSemesterOptions();
-            await chrome.storage.local.set({ semesterOptions });
-
-            if (settings.autoScrap && settings.currentSemester) {
-                console.log("Auto-scraping triggered");
-                await scrapeAndSendData(settings.currentSemester);
-            }
-        }
-    } catch (error) {
-        console.error("Error in main function:", error);
-    }
-}
-
 async function scrapeAndSendData(semesterSubId) {
     try {
         const { csrfToken, id } = extractCsrfTokenAndId(document.documentElement.innerHTML);
@@ -306,7 +285,13 @@ async function scrapeAndSendData(semesterSubId) {
             throw new Error('No class IDs fetched');
         }
 
-        const token = await login(id);
+        // Get the UID from Chrome storage
+        const { uid } = await chrome.storage.local.get(['uid']);
+        if (!uid) {
+            throw new Error('UID not found in storage');
+        }
+
+        const token = await login(uid);
         const scrapedData = await scrapeDigitalAssignments(classIds, id, csrfToken);
         console.log('Scraped Digital Assignment Data:', scrapedData);
 
@@ -324,14 +309,25 @@ async function main() {
     console.log("Main function started");
     try {
         if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
+            const { justSignedIn } = await chrome.storage.local.get(['justSignedIn']);
+
             // Always fetch semester options when the content page loads
             const semesterOptions = await getSemesterOptions();
             await chrome.storage.local.set({ semesterOptions });
 
-            // Check if there's a current semester and trigger set-da
-            const { currentSemester } = await chrome.storage.local.get(['currentSemester']);
-            if (currentSemester) {
-                await scrapeAndSendData(currentSemester);
+            if (justSignedIn) {
+                console.log("User just signed in, fetching semester options and triggering set-da");
+                if (semesterOptions && semesterOptions.length > 0) {
+                    const currentSemester = semesterOptions[0].value; // Select the first semester
+                    await chrome.storage.local.set({ currentSemester, justSignedIn: false });
+                    await scrapeAndSendData(currentSemester);
+                }
+            } else {
+                // Check if there's a current semester and trigger set-da
+                const { currentSemester } = await chrome.storage.local.get(['currentSemester']);
+                if (currentSemester) {
+                    await scrapeAndSendData(currentSemester);
+                }
             }
         }
     } catch (error) {
