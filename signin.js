@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const signInButton = document.getElementById('signInButton');
+    const signInButton = document.getElementById('google-btn');
 
     signInButton.addEventListener('click', function () {
         chrome.identity.getAuthToken({ interactive: true }, function (token) {
