@@ -309,38 +309,25 @@ async function main() {
     console.log("Main function started");
     try {
         if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
-            const settings = await chrome.storage.local.get(['currentSemester', 'autoScrap']);
-            
+            const { justSignedIn } = await chrome.storage.local.get(['justSignedIn']);
+
             // Always fetch semester options when the content page loads
             const semesterOptions = await getSemesterOptions();
             await chrome.storage.local.set({ semesterOptions });
 
-            if (settings.autoScrap && settings.currentSemester) {
-                console.log("Auto-scraping triggered");
-                await scrapeAndSendData(settings.currentSemester);
-            }
-        }
-    } catch (error) {
-        console.error("Error in main function:", error);
-    }
-}
-
-
-async function main() {
-    if (hasRun) return;
-    hasRun = true;
-
-    console.log("Main function started");
-    try {
-        if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
-            // Always fetch semester options when the content page loads
-            const semesterOptions = await getSemesterOptions();
-            await chrome.storage.local.set({ semesterOptions });
-
-            // Check if there's a current semester and trigger set-da
-            const { currentSemester } = await chrome.storage.local.get(['currentSemester']);
-            if (currentSemester) {
-                await scrapeAndSendData(currentSemester);
+            if (justSignedIn) {
+                console.log("User just signed in, fetching semester options and triggering set-da");
+                if (semesterOptions && semesterOptions.length > 0) {
+                    const currentSemester = semesterOptions[0].value; // Select the first semester
+                    await chrome.storage.local.set({ currentSemester, justSignedIn: false });
+                    await scrapeAndSendData(currentSemester);
+                }
+            } else {
+                // Check if there's a current semester and trigger set-da
+                const { currentSemester } = await chrome.storage.local.get(['currentSemester']);
+                if (currentSemester) {
+                    await scrapeAndSendData(currentSemester);
+                }
             }
         }
     } catch (error) {
