@@ -3,27 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIT Digital Assignment Scraper</title>
-    <style>
-        body {
-            width: 300px;
-            padding: 10px;
-            font-family: Arial, sans-serif;
-        }
-        select, button {
-            margin-top: 10px;
-            width: 100%;
-        }
-    </style>
+    <title>Assignofast</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>VIT Digital Assignment Scraper</h2>
-    <div>
-        <label for="semesterSelect">Select Semester:</label>
-        <select id="semesterSelect"></select>
-    </div>
-    <div>
-        <p>Current Semester: <span id="currentSemester">None</span></p>
+    <div class="container">
+        <h1>Assignofast</h1>
+        <div class="content">
+            <div class="current-semester">
+                Current Semester: <span id="currentSemester">None</span>
+            </div>
+            <div class="select-wrapper">
+                <select id="semesterSelect">
+                    <option value="VL2024501">Select your semester</option>
+                    <!-- Other semester options will be populated by JavaScript -->
+                </select>
+            </div>
+        </div>
+        <button id="submitButton">Submit</button>
     </div>
     <script src="popup.js"></script>
 </body>
