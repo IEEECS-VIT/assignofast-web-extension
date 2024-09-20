@@ -1,83 +1,101 @@
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    padding: 15px;
-    width: 93vw;
-    height: 150px;
+    padding: 20px;
+    width: 400px;
+    height: 200px;
     background-color: #1e1e1e;
     background-image: radial-gradient(#333333 1px, transparent 1px);
     background-size: 10px 10px;
     color: #ffffff;
-    border-radius: 10px;
-    overflow: hidden;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .container {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    align-items: center;
 }
 
 h1 {
-    font-size: 20px;
-    margin: 0 0 15px 0;
-    color: #fafa37;
+    font-size: 24px;
+    margin: 0 0 20px 0;
+    color: #e6e600;
 }
 
 .content {
-    flex-grow: 1;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    margin-bottom: 15px;
+    align-items: center;
 }
 
 .current-semester {
     font-size: 14px;
-    margin-bottom: 10px;
-}
-
-#currentSemester {
-    font-weight: bold;
-    color: #fafa37;
+    margin-bottom: 5px;
+    color: #888;
 }
 
 .select-wrapper {
     position: relative;
     width: 100%;
+    margin-bottom: 20px;
 }
 
 select {
     width: 100%;
-    padding: 8px 12px;
-    font-size: 14px;
-    background-color: #2e2e3e;
+    padding: 10px 15px;
+    font-size: 16px;
+    background-color: rgba(255, 255, 255, 0.1);
     color: #ffffff;
-    border: none;
-    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
     appearance: none;
     cursor: pointer;
+}
+
+select:focus {
+    outline: none;
+    border-color: #aaff00;
+}
+
+/* Styling for dropdown options */
+select option {
+    background-color: #2a2a2a;
+    color: #ffffff;
+    padding: 10px;
+}
+
+select option:hover,
+select option:focus,
+select option:active {
+    background-color: #3a3a3a;
 }
 
 .select-wrapper::after {
     content: '\25BC';
     position: absolute;
     top: 50%;
-    right: 12px;
+    right: 15px;
     transform: translateY(-50%);
     pointer-events: none;
     font-size: 12px;
-    color: #fafa37;
+    color: #ffffff;
 }
 
 button {
     width: 100%;
-    padding: 10px;
-    font-size: 16px;
+    padding: 12px;
+    font-size: 18px;
     background-color: #aaff00;
     color: #000000;
     border: none;
-    border-radius: 5px;
+    border-radius: 10px;
     cursor: pointer;
     transition: background-color 0.3s;
 }

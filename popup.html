@@ -10,17 +10,14 @@
     <div class="container">
         <h1>Assignofast</h1>
         <div class="content">
-            <div class="current-semester">
-                Current Semester: <span id="currentSemester">None</span>
-            </div>
+            <div class="current-semester">Current Semester: <span id="currentSemester">None</span></div>
             <div class="select-wrapper">
                 <select id="semesterSelect">
-                    <option value="VL2024501">Select your semester</option>
-                    <!-- Other semester options will be populated by JavaScript -->
+                    <option value="" disabled selected>Select Your Current Semester</option>
                 </select>
             </div>
+            <button id="submitButton">Submit</button>
         </div>
-        <button id="submitButton">Submit</button>
     </div>
     <script src="popup.js"></script>
 </body>
