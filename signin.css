@@ -1,0 +1,73 @@
+body {
+  height: 100vh;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-image: url("images/bg.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #1a1a1a; /* Fallback color */
+}
+
+.container {
+  /* background-color: rgba(0, 0, 0, 0.8); */
+  padding: 40px;
+  border-radius: 10px;
+  text-align: center;
+  color: white;
+  width: 300px;
+}
+
+.logo {
+  width: 40px;
+  height: 2px;
+  margin: 0 auto 20px;
+  background-color: #a3ff00;
+}
+
+h1 {
+  font-size: 24px;
+  margin-bottom: 30px;
+}
+
+.google-btn {
+  background-color: #a3ff00;
+  color: #000;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.google-btn img {
+  width: 20px;
+  margin-right: 10px;
+}
+
+.footer {
+  margin-top: 20px;
+  font-size: 12px;
+}
+
+.footer a {
+  color: #a3ff00;
+  text-decoration: none;
+  margin: 0 5px;
+}
+
+.language-selector {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  color: white;
+  font-size: 14px;
+}
