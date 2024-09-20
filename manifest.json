@@ -34,7 +34,7 @@
         "https://assignofast-backend.vercel.app/*"
     ],
     "oauth2": {
-        "client_id": "889572280066-jpfj7bgomgrq61c29qos4drj26pkooos.apps.googleusercontent.com",
+        "client_id": "889572280066-5iih89301psbttbjhl2123942nn1f9dk.apps.googleusercontent.com",
         "scopes": [
             "https://www.googleapis.com/auth/userinfo.email",
             "https://www.googleapis.com/auth/userinfo.profile"
