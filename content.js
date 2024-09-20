@@ -77,6 +77,10 @@ async function getSemesterOptions() {
 
         console.log('Semester options:', options);
 
+        // Store the options in chrome.storage and notify the popup
+        await chrome.storage.local.set({ semesterOptions: options });
+        chrome.runtime.sendMessage({ action: "semesterOptionsUpdated", options });
+
         return options;
 
     } catch (error) {
@@ -313,7 +317,8 @@ async function main() {
 
             // Always fetch semester options when the content page loads
             const semesterOptions = await getSemesterOptions();
-            await chrome.storage.local.set({ semesterOptions });
+            
+            // The storage update is now handled in getSemesterOptions()
 
             if (justSignedIn) {
                 console.log("User just signed in, fetching semester options and triggering set-da");
