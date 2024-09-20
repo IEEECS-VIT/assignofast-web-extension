@@ -4,8 +4,12 @@ body {
     padding: 15px;
     width: 93vw;
     height: 150px;
-    background-color: #1e1e2e;
+    background-color: #1e1e1e;
+    background-image: radial-gradient(#333333 1px, transparent 1px);
+    background-size: 10px 10px;
     color: #ffffff;
+    border-radius: 10px;
+    overflow: hidden;
 }
 
 .container {
