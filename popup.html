@@ -4,18 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assignofast</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
     <div class="container">
         <h1>Assignofast</h1>
-        <div class="content">
-            <div class="current-semester">Current Semester: <span id="currentSemester">None</span></div>
-            <div class="select-wrapper">
-                <select id="semesterSelect">
-                    <option value="" disabled selected>Select Your Current Semester</option>
-                </select>
+        
+        <div id="signin-content" style="display: none;">
+            <p>Please sign in to use Assignofast</p>
+            <button id="signin-btn" class="google-btn">
+                <img src="images/google.png" alt="Google Icon">
+                Continue with Google
+            </button>
+        </div>
+
+        <div id="semester-content" style="display: none;">
+            <div class="current-semester">
+                Current Semester: <span id="currentSemester">None</span>
             </div>
+
+            <div class="select-wrapper">
+                <label for="semesterSelect">Select Your Current Semester</label>
+                <select id="semesterSelect"></select>
+            </div>
+
             <button id="submitButton">Submit</button>
         </div>
     </div>

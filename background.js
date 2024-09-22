@@ -12,6 +12,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             });
         });
         return true; // Indicates that the response is asynchronous
+    } else if (request.action === "checkSignInStatus") {
+        chrome.storage.local.get(['uid'], (result) => {
+            sendResponse({isSignedIn: !!result.uid});
+        });
+        return true; // Indicates that the response is asynchronous
     }
 });
 

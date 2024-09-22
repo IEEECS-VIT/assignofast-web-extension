@@ -1,10 +1,23 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    const signinContent = document.getElementById('signin-content');
+    const semesterContent = document.getElementById('semester-content');
+    const signinBtn = document.getElementById('signin-btn');
     const semesterSelect = document.getElementById('semesterSelect');
     const submitButton = document.getElementById('submitButton');
     const currentSemesterSpan = document.getElementById('currentSemester');
 
+    function showSigninContent() {
+        signinContent.style.display = 'block';
+        semesterContent.style.display = 'none';
+    }
+
+    function showSemesterContent() {
+        signinContent.style.display = 'none';
+        semesterContent.style.display = 'block';
+    }
+
     function populateSemesterOptions(options) {
-        semesterSelect.innerHTML = ''; // Clear existing options
+        semesterSelect.innerHTML = '';
         if (options && Array.isArray(options)) {
             options.forEach(option => {
                 const optElement = document.createElement('option');
@@ -17,33 +30,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Load saved settings
-    try {
-        const savedSettings = await chrome.storage.local.get(['currentSemester', 'semesterOptions']);
-
-        // Display current semester
-        if (savedSettings.currentSemester) {
-            currentSemesterSpan.textContent = savedSettings.currentSemester;
+    async function checkSignInStatus() {
+        const { uid } = await chrome.storage.local.get(['uid']);
+        if (uid) {
+            showSemesterContent();
+            loadSavedSettings();
+        } else {
+            showSigninContent();
         }
-
-        // Populate semester options
-        populateSemesterOptions(savedSettings.semesterOptions);
-
-        if (savedSettings.currentSemester) {
-            semesterSelect.value = savedSettings.currentSemester;
-        }
-    } catch (error) {
-        console.error('Error loading saved settings:', error);
     }
 
-    // Listen for updates to semester options
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === "semesterOptionsUpdated") {
-            populateSemesterOptions(request.options);
+    async function loadSavedSettings() {
+        try {
+            const savedSettings = await chrome.storage.local.get(['currentSemester', 'semesterOptions']);
+
+            if (savedSettings.currentSemester) {
+                currentSemesterSpan.textContent = savedSettings.currentSemester;
+            }
+
+            populateSemesterOptions(savedSettings.semesterOptions);
+
+            if (savedSettings.currentSemester) {
+                semesterSelect.value = savedSettings.currentSemester;
+            }
+        } catch (error) {
+            console.error('Error loading saved settings:', error);
         }
+    }
+
+    signinBtn.addEventListener('click', () => {
+        chrome.tabs.create({ url: "signin.html" });
+        window.close(); // Close the popup
     });
 
-    // Event listener for submit button
     submitButton.addEventListener('click', async () => {
         const selectedSemester = semesterSelect.value;
         if (!selectedSemester) {
@@ -54,7 +73,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             await chrome.storage.local.set({currentSemester: selectedSemester});
             currentSemesterSpan.textContent = selectedSemester;
-            // Trigger set-da operation
             const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
             await chrome.tabs.sendMessage(tab.id, {action: "triggerSetDa", semester: selectedSemester});
         } catch (error) {
@@ -62,8 +80,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Request semester options update when popup opens
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.action === "semesterOptionsUpdated") {
+            populateSemesterOptions(request.options);
+        }
+    });
+
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
         chrome.tabs.sendMessage(tabs[0].id, {action: "getSemesterOptions"});
     });
+
+    checkSignInStatus();
 });
