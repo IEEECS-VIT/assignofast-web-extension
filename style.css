@@ -103,3 +103,17 @@ button {
 button:hover {
     background-color: #88cc00;
 }
+
+/* New styles for sign-in content */
+.instruction {
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 15px;
+    color: #ffffff;
+}
+
+#signInButton {
+    width: auto;
+    padding: 10px 20px;
+    font-size: 16px;
+}

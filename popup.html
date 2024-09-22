@@ -9,11 +9,15 @@
 <body>
     <div class="container">
         <h1>Assignofast</h1>
-        <div class="content">
-            <div class="current-semester">Current Semester: <span id="currentSemester">None</span></div>
+        <div id="signInContent" class="content">
+            <p class="instruction">Sign in with Google to sync with the mobile app</p>
+            <button id="signInButton">Sign In</button>
+        </div>
+        <div id="semesterContent" class="content" style="display: none;">
+            <p class="current-semester">Current Semester: <span id="currentSemester">None</span></p>
             <div class="select-wrapper">
                 <select id="semesterSelect">
-                    <option value="" disabled selected>Select Your Current Semester</option>
+                    <option value="">Select Your Current Semester</option>
                 </select>
             </div>
             <button id="submitButton">Submit</button>
