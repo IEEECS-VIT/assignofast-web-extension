@@ -89,8 +89,8 @@ select option:active {
 }
 
 button {
-    width: 100%;
-    padding: 12px;
+    width: auto;
+    padding: 12px 24px;
     font-size: 18px;
     background-color: #aaff00;
     color: #000000;
@@ -98,13 +98,15 @@ button {
     border-radius: 10px;
     cursor: pointer;
     transition: background-color 0.3s;
+    margin: 0 auto;
+    display: block;
 }
 
 button:hover {
     background-color: #88cc00;
 }
 
-/* New styles for sign-in content */
+/* Styles for sign-in content */
 .instruction {
     font-size: 14px;
     text-align: center;
@@ -113,7 +115,13 @@ button:hover {
 }
 
 #signInButton {
-    width: auto;
-    padding: 10px 20px;
     font-size: 16px;
+}
+
+/* Center content vertically */
+#signInContent {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
 }
