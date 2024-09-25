@@ -5,6 +5,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const semesterSelect = document.getElementById('semesterSelect');
     const submitButton = document.getElementById('submitButton');
     const currentSemesterSpan = document.getElementById('currentSemester');
+    const confirmationModal = document.getElementById('confirmationModal');
+    const confirmChangeButton = document.getElementById('confirmChange');
+    const cancelChangeButton = document.getElementById('cancelChange');
+
+    let selectedSemester = '';
 
     function showSignInContent() {
         signInContent.style.display = 'block';
@@ -25,6 +30,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 optElement.textContent = option.text;
                 semesterSelect.appendChild(optElement);
             });
+        }
+    }
+
+    function showConfirmationModal() {
+        confirmationModal.style.display = 'block';
+    }
+
+    function hideConfirmationModal() {
+        confirmationModal.style.display = 'none';
+    }
+
+    async function updateSemester(newSemester) {
+        try {
+            await chrome.storage.local.set({currentSemester: newSemester});
+            currentSemesterSpan.textContent = newSemester;
+            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+            await chrome.tabs.sendMessage(tab.id, {action: "triggerSetDa", semester: newSemester});
+        } catch (error) {
+            console.error('Error saving semester or triggering set-da:', error);
         }
     }
 
@@ -53,21 +77,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Submit button click handler
-    submitButton.addEventListener('click', async () => {
-        const selectedSemester = semesterSelect.value;
+    submitButton.addEventListener('click', () => {
+        selectedSemester = semesterSelect.value;
         if (!selectedSemester) {
             alert('Please select a semester');
             return;
         }
         
-        try {
-            await chrome.storage.local.set({currentSemester: selectedSemester});
-            currentSemesterSpan.textContent = selectedSemester;
-            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-            await chrome.tabs.sendMessage(tab.id, {action: "triggerSetDa", semester: selectedSemester});
-        } catch (error) {
-            console.error('Error saving semester or triggering set-da:', error);
+        if (selectedSemester !== currentSemesterSpan.textContent) {
+            showConfirmationModal();
+        } else {
+            updateSemester(selectedSemester);
         }
+    });
+
+    // Confirm change button click handler
+    confirmChangeButton.addEventListener('click', () => {
+        hideConfirmationModal();
+        updateSemester(selectedSemester);
+    });
+
+    // Cancel change button click handler
+    cancelChangeButton.addEventListener('click', () => {
+        hideConfirmationModal();
+        semesterSelect.value = currentSemesterSpan.textContent;
     });
 
     // Listen for updates to semester options
