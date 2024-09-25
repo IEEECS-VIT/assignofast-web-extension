@@ -169,3 +169,60 @@ button:hover {
     width: 20px;
     margin-right: 10px;
 }
+
+/* ... (existing styles remain unchanged) ... */
+
+/* Styles for the confirmation modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: rgba(30, 30, 30, 0.9);
+    color: #ffffff;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #aaff00;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 300px;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#confirmChange {
+    background-color: #aaff00;
+    color: #000000;
+}
+
+#confirmChange:hover {
+    background-color: #88cc00;
+}
+
+#cancelChange {
+    background-color: #ff3333;
+    color: #ffffff;
+}
+
+#cancelChange:hover {
+    background-color: #cc0000;
+}
