@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const confirmationModal = document.getElementById('confirmationModal');
     const confirmChangeButton = document.getElementById('confirmChange');
     const cancelChangeButton = document.getElementById('cancelChange');
+    const userInfoDiv = document.getElementById('userInfo');
+    const userEmailSpan = document.getElementById('userEmail');
+    const logoutSpan = document.getElementById('logout');
 
     let selectedSemester = '';
 
@@ -54,9 +57,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Check if user is signed in
     try {
-        const { uid } = await chrome.storage.local.get(['uid']);
+        const { uid, email } = await chrome.storage.local.get(['uid', 'email']);
         if (uid) {
             showSemesterContent();
+            userEmailSpan.textContent = email;
+            userInfoDiv.style.display = 'block';
             const savedSettings = await chrome.storage.local.get(['currentSemester', 'semesterOptions']);
             if (savedSettings.currentSemester) {
                 currentSemesterSpan.textContent = savedSettings.currentSemester;
@@ -65,10 +70,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             populateSemesterOptions(savedSettings.semesterOptions);
         } else {
             showSignInContent();
+            userInfoDiv.style.display = 'none';
         }
     } catch (error) {
         console.error('Error checking sign-in status:', error);
         showSignInContent();
+        userInfoDiv.style.display = 'none';
     }
 
     // Sign In button click handler
@@ -114,4 +121,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
         chrome.tabs.sendMessage(tabs[0].id, {action: "getSemesterOptions"});
     });
+
+    function logout() {
+        chrome.storage.local.remove(['uid', 'email'], () => {
+            showSignInContent();
+            userInfoDiv.style.display = 'none';
+        });
+    }
+
+    logoutSpan.addEventListener('click', logout);
 });

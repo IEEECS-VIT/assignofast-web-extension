@@ -226,3 +226,56 @@ button:hover {
 #cancelChange:hover {
     background-color: #cc0000;
 }
+
+/* Existing styles remain unchanged */
+
+/* New styles for user info and logout */
+.user-info {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: #ffffff;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    border-radius: 5px;
+  }
+  
+  .logout-link {
+    text-decoration: underline;
+    color: #aaff00;
+    cursor: pointer;
+  }
+  
+  .logout-link:hover {
+    color: #88cc00;
+  }
+  
+  /* Adjust the height of semesterContent to accommodate the new user info */
+  #semesterContent {
+    height: calc(100% - 40px); /* Subtract the approximate height of the user info */
+    position: relative;
+    padding-bottom: 30px; /* Add some padding at the bottom */
+  }
+  
+  /* Ensure the submit button doesn't overlap with the user info */
+  #semesterContent button {
+    margin-bottom: 40px;
+  }
+  
+  /* Adjustments to maintain existing layout */
+  body {
+    position: relative;
+    min-height: 240px; /* Increase minimum height to accommodate new content */
+  }
+  
+  .container {
+    height: 100%;
+  }
+  
+  .content {
+    height: 100%;
+    position: relative;
+  }
