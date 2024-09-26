@@ -169,3 +169,113 @@ button:hover {
     width: 20px;
     margin-right: 10px;
 }
+
+/* ... (existing styles remain unchanged) ... */
+
+/* Styles for the confirmation modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: rgba(30, 30, 30, 0.9);
+    color: #ffffff;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #aaff00;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 300px;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#confirmChange {
+    background-color: #aaff00;
+    color: #000000;
+}
+
+#confirmChange:hover {
+    background-color: #88cc00;
+}
+
+#cancelChange {
+    background-color: #ff3333;
+    color: #ffffff;
+}
+
+#cancelChange:hover {
+    background-color: #cc0000;
+}
+
+/* Existing styles remain unchanged */
+
+/* New styles for user info and logout */
+.user-info {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: #ffffff;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    border-radius: 5px;
+  }
+  
+  .logout-link {
+    text-decoration: underline;
+    color: #aaff00;
+    cursor: pointer;
+  }
+  
+  .logout-link:hover {
+    color: #88cc00;
+  }
+  
+  /* Adjust the height of semesterContent to accommodate the new user info */
+  #semesterContent {
+    height: calc(100% - 40px); /* Subtract the approximate height of the user info */
+    position: relative;
+    padding-bottom: 30px; /* Add some padding at the bottom */
+  }
+  
+  /* Ensure the submit button doesn't overlap with the user info */
+  #semesterContent button {
+    margin-bottom: 40px;
+  }
+  
+  /* Adjustments to maintain existing layout */
+  body {
+    position: relative;
+    min-height: 240px; /* Increase minimum height to accommodate new content */
+  }
+  
+  .container {
+    height: 100%;
+  }
+  
+  .content {
+    height: 100%;
+    position: relative;
+  }

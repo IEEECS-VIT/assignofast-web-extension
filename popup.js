@@ -5,6 +5,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const semesterSelect = document.getElementById('semesterSelect');
     const submitButton = document.getElementById('submitButton');
     const currentSemesterSpan = document.getElementById('currentSemester');
+    const confirmationModal = document.getElementById('confirmationModal');
+    const confirmChangeButton = document.getElementById('confirmChange');
+    const cancelChangeButton = document.getElementById('cancelChange');
+    const userInfoDiv = document.getElementById('userInfo');
+    const userEmailSpan = document.getElementById('userEmail');
+    const logoutSpan = document.getElementById('logout');
+
+    let selectedSemester = '';
 
     function showSignInContent() {
         signInContent.style.display = 'block';
@@ -28,11 +36,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    function showConfirmationModal() {
+        confirmationModal.style.display = 'block';
+    }
+
+    function hideConfirmationModal() {
+        confirmationModal.style.display = 'none';
+    }
+
+    async function updateSemester(newSemester) {
+        try {
+            await chrome.storage.local.set({currentSemester: newSemester});
+            currentSemesterSpan.textContent = newSemester;
+            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+            await chrome.tabs.sendMessage(tab.id, {action: "triggerSetDa", semester: newSemester});
+        } catch (error) {
+            console.error('Error saving semester or triggering set-da:', error);
+        }
+    }
+
     // Check if user is signed in
     try {
-        const { uid } = await chrome.storage.local.get(['uid']);
+        const { uid, email } = await chrome.storage.local.get(['uid', 'email']);
         if (uid) {
             showSemesterContent();
+            userEmailSpan.textContent = email;
+            userInfoDiv.style.display = 'block';
             const savedSettings = await chrome.storage.local.get(['currentSemester', 'semesterOptions']);
             if (savedSettings.currentSemester) {
                 currentSemesterSpan.textContent = savedSettings.currentSemester;
@@ -41,10 +70,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             populateSemesterOptions(savedSettings.semesterOptions);
         } else {
             showSignInContent();
+            userInfoDiv.style.display = 'none';
         }
     } catch (error) {
         console.error('Error checking sign-in status:', error);
         showSignInContent();
+        userInfoDiv.style.display = 'none';
     }
 
     // Sign In button click handler
@@ -53,21 +84,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Submit button click handler
-    submitButton.addEventListener('click', async () => {
-        const selectedSemester = semesterSelect.value;
+    submitButton.addEventListener('click', () => {
+        selectedSemester = semesterSelect.value;
         if (!selectedSemester) {
             alert('Please select a semester');
             return;
         }
         
-        try {
-            await chrome.storage.local.set({currentSemester: selectedSemester});
-            currentSemesterSpan.textContent = selectedSemester;
-            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-            await chrome.tabs.sendMessage(tab.id, {action: "triggerSetDa", semester: selectedSemester});
-        } catch (error) {
-            console.error('Error saving semester or triggering set-da:', error);
+        if (selectedSemester !== currentSemesterSpan.textContent) {
+            showConfirmationModal();
+        } else {
+            updateSemester(selectedSemester);
         }
+    });
+
+    // Confirm change button click handler
+    confirmChangeButton.addEventListener('click', () => {
+        hideConfirmationModal();
+        updateSemester(selectedSemester);
+    });
+
+    // Cancel change button click handler
+    cancelChangeButton.addEventListener('click', () => {
+        hideConfirmationModal();
+        semesterSelect.value = currentSemesterSpan.textContent;
     });
 
     // Listen for updates to semester options
@@ -81,4 +121,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
         chrome.tabs.sendMessage(tabs[0].id, {action: "getSemesterOptions"});
     });
+
+    function logout() {
+        chrome.storage.local.remove(['uid', 'email'], () => {
+            showSignInContent();
+            userInfoDiv.style.display = 'none';
+        });
+    }
+
+    logoutSpan.addEventListener('click', logout);
 });

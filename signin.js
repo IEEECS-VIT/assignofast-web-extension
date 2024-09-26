@@ -15,9 +15,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     const user = result.user;
                     const uid = user.uid;
 
-                    chrome.storage.local.set({ uid: uid, justSignedIn: true }, function () {
-                        console.log('UID saved and justSignedIn flag set:', uid);
-
+                    chrome.storage.local.set({ uid: uid, email: user.email, justSignedIn: true }, function () {
+                        console.log('UID and email saved, and justSignedIn flag set:', uid , user.email);
                         window.close();
                     });
                 })

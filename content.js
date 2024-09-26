@@ -222,7 +222,6 @@ async function login(uid) {
 }
 
 async function formatAndSendData(data, token) {
-    // Remove the uid extraction from data.reg_no
     const formattedClasses = data.courses.map(course => {
         if (!course.class_id || !course.course_code || !course.course_title || !Array.isArray(course.duedates)) {
             console.error('Invalid course data:', course);
@@ -245,7 +244,8 @@ async function formatAndSendData(data, token) {
 
     const payload = {
         uid: uid,
-        classes: formattedClasses
+        classes: formattedClasses,
+        registrationNumber: data.reg_no
     };
 
     console.log('Payload being sent:', payload);
