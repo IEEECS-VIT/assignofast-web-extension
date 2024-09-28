@@ -201,7 +201,7 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
 
 async function login(uid) {
     try {
-        const response = await fetch(`https://assignofast-backend.vercel.app/login?uid=${uid}`, {
+        const response = await fetch(`https://assignofast-backend.vercel.app/auth/login?uid=${uid}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -236,7 +236,7 @@ async function formatAndSendData(data, token) {
             class_id: course.class_id,
             course_code: course.course_code,
             course_title: course.course_title,
-            duedates: validDuedates
+            course_assignments : validDuedates
         };
     }).filter(course => course !== null);
 
@@ -244,8 +244,7 @@ async function formatAndSendData(data, token) {
 
     const payload = {
         uid: uid,
-        classes: formattedClasses,
-        registrationNumber: data.reg_no
+        classes: formattedClasses
     };
 
     console.log('Payload being sent:', payload);
@@ -253,7 +252,7 @@ async function formatAndSendData(data, token) {
     try {
         console.log('Token being used:', token);
 
-        const response = await fetch('https://assignofast-backend.vercel.app/set-da', {
+        const response = await fetch('https://assignofast-backend.vercel.app/assignments/set-da', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
