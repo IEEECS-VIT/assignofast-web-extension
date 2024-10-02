@@ -55,28 +55,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Check if user is signed in
-    try {
-        const { uid, email } = await chrome.storage.local.get(['uid', 'email']);
-        if (uid) {
-            showSemesterContent();
-            userEmailSpan.textContent = email;
-            userInfoDiv.style.display = 'block';
-            const savedSettings = await chrome.storage.local.get(['currentSemester', 'semesterOptions']);
-            if (savedSettings.currentSemester) {
-                currentSemesterSpan.textContent = savedSettings.currentSemester;
-                semesterSelect.value = savedSettings.currentSemester;
+    async function checkAuthenticationStatus() {
+        try {
+            const { uid, email, authToken } = await chrome.storage.local.get(['uid', 'email', 'authToken']);
+            if (uid && authToken) {
+                showSemesterContent();
+                userEmailSpan.textContent = email;
+                userInfoDiv.style.display = 'block';
+                const savedSettings = await chrome.storage.local.get(['currentSemester', 'semesterOptions']);
+                if (savedSettings.currentSemester) {
+                    currentSemesterSpan.textContent = savedSettings.currentSemester;
+                    semesterSelect.value = savedSettings.currentSemester;
+                }
+                populateSemesterOptions(savedSettings.semesterOptions);
+            } else {
+                showSignInContent();
+                userInfoDiv.style.display = 'none';
             }
-            populateSemesterOptions(savedSettings.semesterOptions);
-        } else {
+        } catch (error) {
+            console.error('Error checking authentication status:', error);
             showSignInContent();
             userInfoDiv.style.display = 'none';
         }
-    } catch (error) {
-        console.error('Error checking sign-in status:', error);
-        showSignInContent();
-        userInfoDiv.style.display = 'none';
     }
+
+    // Call checkAuthenticationStatus when the popup loads
+    await checkAuthenticationStatus();
 
     // Sign In button click handler
     signInButton.addEventListener('click', () => {
@@ -123,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     function logout() {
-        chrome.storage.local.remove(['uid', 'email'], () => {
+        chrome.storage.local.remove(['uid', 'email', 'authToken'], () => {
             showSignInContent();
             userInfoDiv.style.display = 'none';
         });

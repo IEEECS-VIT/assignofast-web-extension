@@ -77,7 +77,6 @@ async function getSemesterOptions() {
 
         console.log('Semester options:', options);
 
-        // Store the options in chrome.storage and notify the popup
         await chrome.storage.local.set({ semesterOptions: options });
         chrome.runtime.sendMessage({ action: "semesterOptionsUpdated", options });
 
@@ -199,29 +198,20 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
     return scrapedData;
 }
 
-async function login(uid) {
+async function checkAuthentication() {
     try {
-        const response = await fetch(`https://assignofast-backend.vercel.app/auth/login?uid=${uid}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        const { authToken } = await chrome.storage.local.get(['authToken']);
+        if (!authToken) {
+            throw new Error('No auth token found');
         }
-
-        const result = await response.json();
-        console.log('Login Response:', result);
-        return result.token;
+        return authToken;
     } catch (error) {
-        console.error('Error during login:', error);
+        console.error('Authentication check failed:', error);
         throw error;
     }
 }
 
-async function formatAndSendData(data, token) {
+async function formatAndSendData(data) {
     const formattedClasses = data.courses.map(course => {
         if (!course.class_id || !course.course_code || !course.course_title || !Array.isArray(course.duedates)) {
             console.error('Invalid course data:', course);
@@ -236,7 +226,7 @@ async function formatAndSendData(data, token) {
             class_id: course.class_id,
             course_code: course.course_code,
             course_title: course.course_title,
-            course_assignments : validDuedates
+            course_assignments: validDuedates
         };
     }).filter(course => course !== null);
 
@@ -250,13 +240,13 @@ async function formatAndSendData(data, token) {
     console.log('Payload being sent:', payload);
 
     try {
-        console.log('Token being used:', token);
-
+        const authToken = await checkAuthentication();
+        
         const response = await fetch('https://assignofast-backend.vercel.app/assignments/set-da', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${authToken}`
             },
             body: JSON.stringify(payload)
         });
@@ -288,17 +278,10 @@ async function scrapeAndSendData(semesterSubId) {
             throw new Error('No class IDs fetched');
         }
 
-        // Get the UID from Chrome storage
-        const { uid } = await chrome.storage.local.get(['uid']);
-        if (!uid) {
-            throw new Error('UID not found in storage');
-        }
-
-        const token = await login(uid);
         const scrapedData = await scrapeDigitalAssignments(classIds, id, csrfToken);
         console.log('Scraped Digital Assignment Data:', scrapedData);
 
-        const result = await formatAndSendData(scrapedData, token);
+        const result = await formatAndSendData(scrapedData);
         console.log('Data sent successfully:', result);
     } catch (error) {
         console.error('Error in scrapeAndSendData:', error);
@@ -317,8 +300,6 @@ async function main() {
             // Always fetch semester options when the content page loads
             const semesterOptions = await getSemesterOptions();
             
-            // The storage update is now handled in getSemesterOptions()
-
             if (justSignedIn) {
                 console.log("User just signed in, fetching semester options and triggering set-da");
                 if (semesterOptions && semesterOptions.length > 0) {
