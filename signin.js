@@ -6,17 +6,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const authResult = await getAuthToken();
             const userInfo = await getUserInfo(authResult.access_token);
             
-            // Exchange Google ID token for Firebase auth data
             const firebaseUser = await signInToFirebase(authResult.id_token);
-            const uid = firebaseUser.localId; // This is the Firebase UID
+            const uid = firebaseUser.localId; 
 
-            // Save user data locally
-            await saveUserData(uid, userInfo.email, authResult.id_token);
-
-            // Send data to your backend
-            console.log(firebaseUser.idToken);
+            const backendResponse = await sendToBackend(uid, firebaseUser.idToken);
             
-            await sendToBackend(uid, firebaseUser.idToken);
+            await saveUserData(uid, userInfo.email, backendResponse.token);
 
             console.log('User data saved successfully');
             window.close();
@@ -70,7 +65,7 @@ async function getUserInfo(token) {
 }
 
 async function signInToFirebase(googleIdToken) {
-    const API_KEY = 'AIzaSyCwBHisi29c42yyP57K9B94WHFzYjYR4I8'; // Replace with your Firebase API key
+    const API_KEY = 'AIzaSyCwBHisi29c42yyP57K9B94WHFzYjYR4I8';
     const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${API_KEY}`, {
         method: 'POST',
         headers: {
@@ -92,12 +87,11 @@ async function signInToFirebase(googleIdToken) {
     return response.json();
 }
 
-async function saveUserData(uid, email, idToken) {
+async function saveUserData(uid, email, authToken) {
     await chrome.storage.local.set({
         uid: uid,
         email: email,
-        authToken: idToken,
-        justSignedIn: true
+        authToken: authToken 
     });
 }
 
@@ -113,6 +107,5 @@ async function sendToBackend(uid, idToken) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
-    await chrome.storage.local.set({ backendToken: data.token });
+    return response.json(); 
 }
