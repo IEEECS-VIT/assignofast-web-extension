@@ -5,6 +5,10 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const authResult = await getAuthToken();
             const userInfo = await getUserInfo(authResult.access_token);
+
+            if (!userInfo.email.endsWith('@vitstudent.ac.in')) {
+                throw new Error('Only @vitstudent.ac.in email addresses are allowed.');
+            }
             
             const firebaseUser = await signInToFirebase(authResult.id_token);
             const uid = firebaseUser.localId; 
@@ -23,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 async function getAuthToken() {
     return new Promise((resolve, reject) => {
-        const CLIENT_ID = '889572280066-lb6funq2ma5ak0qgk8dqfg2329hr2q7m.apps.googleusercontent.com';
+        const CLIENT_ID = '889572280066-5pb75orpmet827onhpcq96hsansaer1f.apps.googleusercontent.com';
         const REDIRECT_URL = chrome.identity.getRedirectURL();
         const SCOPES = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'openid'];
 
@@ -31,7 +35,8 @@ async function getAuthToken() {
             `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}` +
             `&redirect_uri=${encodeURIComponent(REDIRECT_URL)}` +
             `&response_type=token id_token` +
-            `&scope=${encodeURIComponent(SCOPES.join(' '))}`;
+            `&scope=${encodeURIComponent(SCOPES.join(' '))}` +
+            `&hd=vitstudent.ac.in`;
 
         chrome.identity.launchWebAuthFlow(
             { url: AUTH_URL, interactive: true },
