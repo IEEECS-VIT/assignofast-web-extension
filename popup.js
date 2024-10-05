@@ -79,7 +79,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Call checkAuthenticationStatus when the popup loads
     await checkAuthenticationStatus();
 
     // Sign In button click handler
@@ -88,16 +87,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Submit button click handler
-    submitButton.addEventListener('click', () => {
+    submitButton.addEventListener('click', async () => {
         selectedSemester = semesterSelect.value;
         if (!selectedSemester) {
             alert('Please select a semester');
             return;
         }
         
-        if (selectedSemester !== currentSemesterSpan.textContent) {
+        const { currentSemester } = await chrome.storage.local.get(['currentSemester']);
+        
+        if (!currentSemester || currentSemester === '') {
+            // First time selection, update without confirmation
+            updateSemester(selectedSemester);
+        } else if (selectedSemester !== currentSemester) {
+            // Semester change, show confirmation
             showConfirmationModal();
         } else {
+            // Same semester selected, update without confirmation
             updateSemester(selectedSemester);
         }
     });
