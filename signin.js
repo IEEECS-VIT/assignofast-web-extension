@@ -3,14 +3,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     signInButton.addEventListener('click', async function () {
         try {
-            // Revoke the current token if it exists
-            await revokeToken();
+            const authResult = await getAuthToken();
+            const userInfo = await getUserInfo(authResult.access_token);
 
-            // Request a new token
-            const authToken = await getAuthToken();
+            if (!userInfo.email.endsWith('@vitstudent.ac.in')) {
+                throw new Error('Only @vitstudent.ac.in email addresses are allowed.');
+            }
+            
+            const firebaseUser = await signInToFirebase(authResult.id_token);
+            const uid = firebaseUser.localId; 
 
-            // Proceed with Firebase authentication
-            await authenticateWithFirebase(authToken);
+            const backendResponse = await sendToBackend(uid, firebaseUser.idToken);
+            
+            await saveUserData(uid, userInfo.email, backendResponse.token);
 
             console.log('User data saved successfully');
             window.close();
@@ -20,41 +25,83 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-async function revokeToken() {
-    return new Promise((resolve) => {
-        chrome.identity.getAuthToken({ interactive: false }, function(token) {
-            if (token) {
-                chrome.identity.removeCachedAuthToken({ token: token }, function() {
-                    chrome.identity.clearAllCachedAuthTokens(resolve);
-                });
-            } else {
-                resolve();
-            }
-        });
-    });
-}
-
 async function getAuthToken() {
     return new Promise((resolve, reject) => {
-        chrome.identity.getAuthToken({ interactive: true }, function(token) {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-            } else {
-                resolve(token);
+        const CLIENT_ID = '889572280066-5pb75orpmet827onhpcq96hsansaer1f.apps.googleusercontent.com';
+        const REDIRECT_URL = chrome.identity.getRedirectURL();
+        const SCOPES = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'openid'];
+
+        const AUTH_URL =
+            `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}` +
+            `&redirect_uri=${encodeURIComponent(REDIRECT_URL)}` +
+            `&response_type=token id_token` +
+            `&scope=${encodeURIComponent(SCOPES.join(' '))}` +
+            `&hd=vitstudent.ac.in`;
+
+        chrome.identity.launchWebAuthFlow(
+            { url: AUTH_URL, interactive: true },
+            function (responseUrl) {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    const url = new URL(responseUrl);
+                    const params = new URLSearchParams(url.hash.substring(1));
+                    const access_token = params.get('access_token');
+                    const id_token = params.get('id_token');
+                    if (access_token && id_token) {
+                        resolve({ access_token, id_token });
+                    } else {
+                        reject(new Error('Failed to get tokens'));
+                    }
+                }
             }
-        });
+        );
     });
 }
 
-async function authenticateWithFirebase(authToken) {
-    const credential = firebase.auth.GoogleAuthProvider.credential(null, authToken);
-    const userCredential = await firebase.auth().signInWithCredential(credential);
-    const user = userCredential.user;
-    const uid = user.uid;
-    
-    const googleIdToken = await user.getIdToken();
+async function getUserInfo(token) {
+    const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) {
+        throw new Error('Failed to get user info');
+    }
+    return response.json();
+}
 
-    const response = await fetch(`https://assignofast-backend.vercel.app/auth/login?uid=${uid}&googleAccessToken=${googleIdToken}`, {
+async function signInToFirebase(googleIdToken) {
+    const API_KEY = 'AIzaSyCwBHisi29c42yyP57K9B94WHFzYjYR4I8';
+    const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${API_KEY}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            postBody: `id_token=${googleIdToken}&providerId=google.com`,
+            requestUri: chrome.identity.getRedirectURL(),
+            returnIdpCredential: true,
+            returnSecureToken: true
+        })
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Firebase Auth Error: ${error.error.message}`);
+    }
+
+    return response.json();
+}
+
+async function saveUserData(uid, email, authToken) {
+    await chrome.storage.local.set({
+        uid: uid,
+        email: email,
+        authToken: authToken 
+    });
+}
+
+async function sendToBackend(uid, idToken) {
+    const response = await fetch(`https://assignofast-backend.vercel.app/auth/login?uid=${uid}&googleAccessToken=${idToken}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -65,12 +112,5 @@ async function authenticateWithFirebase(authToken) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
-    
-    await chrome.storage.local.set({ 
-        uid: uid, 
-        email: user.email, 
-        authToken: data.token,
-        justSignedIn: true 
-    });
+    return response.json(); 
 }
