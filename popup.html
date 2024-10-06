@@ -1,42 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assignofast</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="popup.css">
 </head>
+
 <body>
     <div class="container">
         <h1>Assignofast</h1>
 
         <div id="signInContent" class="content">
-            <p class="instruction">Sign in with Google to sync with the mobile app</p>
+            <p>Sign in with Google to sync with the mobile app</p>
             <div class="button-container">
                 <div class="button-background"></div>
-                <button id="signInButton" class="google-btn">
+                <button id="signInButton">
                     <img src="images/google.png" alt="Google Icon"> Sign In with Google
                 </button>
             </div>
         </div>
 
         <div id="semesterContent" class="content" style="display: none;">
-            <p class="current-semester">Current Semester: <span id="currentSemester">None</span></p>
+            <p>Current Semester: <span id="currentSemester">None</span></p>
             <div class="select-wrapper">
                 <select id="semesterSelect">
                     <option value="">Select Your Current Semester</option>
                 </select>
             </div>
             <button id="submitButton">Submit</button>
+
             <div id="userInfo" class="user-info">
                 Signed in as <span id="userEmail"></span>. <span id="logout" class="logout-link">Logout</span>
-              </div>
+            </div>
         </div>
 
-        <!-- New confirmation modal -->
+        <div id="loader" class="loader" style="display: none;">
+            <div class="spinner"></div>
+            <p>Scraping data, please wait...</p>
+        </div>
+
+        <div id="completionMessage" class="completion-message" style="display: none;">
+            <p>Data scraping complete!</p>
+            <p>Open your app to see the Digital Assignments.</p>
+        </div>
+
         <div id="confirmationModal" class="modal">
             <div class="modal-content">
-                <p>If you change the semester, the database will be updated with the new semester data replacing the old one.</p>
+                <p>If you change the semester, the database will be updated with the new semester data replacing the old
+                    one.</p>
                 <div class="modal-buttons">
                     <button id="confirmChange">Confirm</button>
                     <button id="cancelChange">Cancel</button>
@@ -46,4 +59,5 @@
     </div>
     <script src="popup.js"></script>
 </body>
+
 </html>

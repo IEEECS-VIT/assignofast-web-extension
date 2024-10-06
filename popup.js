@@ -11,17 +11,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userInfoDiv = document.getElementById('userInfo');
     const userEmailSpan = document.getElementById('userEmail');
     const logoutSpan = document.getElementById('logout');
+    const loader = document.getElementById('loader');
+    const completionMessage = document.getElementById('completionMessage');
 
     let selectedSemester = '';
 
     function showSignInContent() {
         signInContent.style.display = 'block';
         semesterContent.style.display = 'none';
+        loader.style.display = 'none';
+        completionMessage.style.display = 'none';
     }
 
     function showSemesterContent() {
         signInContent.style.display = 'none';
         semesterContent.style.display = 'block';
+        loader.style.display = 'none';
+        completionMessage.style.display = 'none';
+    }
+
+    function showLoader() {
+        signInContent.style.display = 'none';
+        semesterContent.style.display = 'none';
+        loader.style.display = 'block';
+        completionMessage.style.display = 'none';
+    }
+
+    function showCompletionMessage() {
+        signInContent.style.display = 'none';
+        semesterContent.style.display = 'none';
+        loader.style.display = 'none';
+        completionMessage.style.display = 'block';
     }
 
     function populateSemesterOptions(options) {
@@ -46,12 +66,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function updateSemester(newSemester) {
         try {
-            await chrome.storage.local.set({currentSemester: newSemester});
+            showLoader();
+            await chrome.storage.local.set({ currentSemester: newSemester });
             currentSemesterSpan.textContent = newSemester;
-            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-            await chrome.tabs.sendMessage(tab.id, {action: "triggerSetDa", semester: newSemester});
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            await chrome.tabs.sendMessage(tab.id, { action: "triggerSetDa", semester: newSemester });
+            showCompletionMessage();
+            setTimeout(() => {
+                showSemesterContent();
+            }, 3000); // Show completion message for 3 seconds
         } catch (error) {
             console.error('Error saving semester or triggering set-da:', error);
+            showSemesterContent();
         }
     }
 
@@ -79,6 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Call checkAuthenticationStatus when the popup loads
     await checkAuthenticationStatus();
 
     // Sign In button click handler
@@ -128,8 +155,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Request semester options update when popup opens
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-        chrome.tabs.sendMessage(tabs[0].id, {action: "getSemesterOptions"});
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "getSemesterOptions" });
     });
 
     function logout() {
