@@ -283,8 +283,13 @@ async function scrapeAndSendData(semesterSubId) {
 
         const result = await formatAndSendData(scrapedData);
         console.log('Data sent successfully:', result);
+
+        // Send a message to the popup that scraping is complete
+        chrome.runtime.sendMessage({ action: "scrapingComplete" });
     } catch (error) {
         console.error('Error in scrapeAndSendData:', error);
+        // Send a message to the popup that scraping failed
+        chrome.runtime.sendMessage({ action: "scrapingFailed", error: error.message });
     }
 }
 
