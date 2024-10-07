@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const semesterContent = document.getElementById('semesterContent');
     const signInButton = document.getElementById('signInButton');
     const semesterSelect = document.getElementById('semesterSelect');
-    const submitButton = document.getElementById('submitButton');
+    const submitButton = document.getElementById('submitSemester');
     const currentSemesterSpan = document.getElementById('currentSemester');
     const confirmationModal = document.getElementById('confirmationModal');
     const confirmChangeButton = document.getElementById('confirmChange');
@@ -122,7 +122,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         const { currentSemester } = await chrome.storage.local.get(['currentSemester']);
-        
         if (!currentSemester || currentSemester === '') {
             // First time selection, update without confirmation
             updateSemester(selectedSemester);
