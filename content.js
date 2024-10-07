@@ -1,4 +1,4 @@
-console.log("Content script started");
+//console.log("Content script started");
 
 let hasRun = false;
 
@@ -46,7 +46,7 @@ async function getSemesterOptions() {
             throw new Error('Failed to extract CSRF token or ID');
         }
 
-        console.log('CSRF Token and ID extracted:', csrfToken, id);
+        //console.log('CSRF Token and ID extracted:', csrfToken, id);
 
         const semesterHtml = await fetchHtml('https://vtop.vit.ac.in/vtop/examinations/StudentDA', {
             method: 'POST',
@@ -75,7 +75,7 @@ async function getSemesterOptions() {
             text: option.textContent,
         }));
 
-        console.log('Semester options:', options);
+        //console.log('Semester options:', options);
 
         await chrome.storage.local.set({ semesterOptions: options });
         chrome.runtime.sendMessage({ action: "semesterOptionsUpdated", options });
@@ -109,13 +109,13 @@ async function fetchClassIds(semesterSubId, authorizedID, csrfToken) {
         }
 
         const data = await response.text();
-        console.log('Class ID Data:', data);
+        //console.log('Class ID Data:', data);
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(data, 'text/html');
         const classIds = Array.from(doc.querySelectorAll('.tableContent td:nth-child(2)')).map(td => td.textContent.trim());
 
-        console.log('Extracted Class IDs:', classIds);
+        //console.log('Extracted Class IDs:', classIds);
 
         if (classIds.length === 0) {
             throw new Error('No class IDs found');
@@ -237,7 +237,7 @@ async function formatAndSendData(data) {
         classes: formattedClasses
     };
 
-    console.log('Payload being sent:', payload);
+    //console.log('Payload being sent:', payload);
 
     try {
         const authToken = await checkAuthentication();
@@ -257,7 +257,7 @@ async function formatAndSendData(data) {
         }
 
         const result = await response.json();
-        console.log('API Response:', result);
+        //console.log('API Response:', result);
 
         return result;
     } catch (error) {
@@ -279,10 +279,10 @@ async function scrapeAndSendData(semesterSubId) {
         }
 
         const scrapedData = await scrapeDigitalAssignments(classIds, id, csrfToken);
-        console.log('Scraped Digital Assignment Data:', scrapedData);
+        //console.log('Scraped Digital Assignment Data:', scrapedData);
 
         const result = await formatAndSendData(scrapedData);
-        console.log('Data sent successfully:', result);
+        //console.log('Data sent successfully:', result);
 
         // Send a message to the popup that scraping is complete
         chrome.runtime.sendMessage({ action: "scrapingComplete" });
@@ -297,7 +297,7 @@ async function main() {
     if (hasRun) return;
     hasRun = true;
 
-    console.log("Main function started");
+    //console.log("Main function started");
     try {
         if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
             const { justSignedIn } = await chrome.storage.local.get(['justSignedIn']);
@@ -306,7 +306,7 @@ async function main() {
             const semesterOptions = await getSemesterOptions();
             
             if (justSignedIn) {
-                console.log("User just signed in, fetching semester options and triggering set-da");
+                //console.log("User just signed in, fetching semester options and triggering set-da");
                 if (semesterOptions && semesterOptions.length > 0) {
                     const currentSemester = semesterOptions[0].value; // Select the first semester
                     await chrome.storage.local.set({ currentSemester, justSignedIn: false });
