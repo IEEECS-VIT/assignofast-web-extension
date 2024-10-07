@@ -71,6 +71,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentSemesterSpan.textContent = newSemester;
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             await chrome.tabs.sendMessage(tab.id, { action: "triggerSetDa", semester: newSemester });
+
+            // Wait for the scraping and sending process to complete
+            await new Promise(resolve => {
+                chrome.runtime.onMessage.addListener(function listener(request) {
+                    if (request.action === "scrapingComplete") {
+                        chrome.runtime.onMessage.removeListener(listener);
+                        resolve();
+                    }
+                });
+            });
+
+            // Show completion message after scraping is done
             showCompletionMessage();
             setTimeout(() => {
                 showSemesterContent();
