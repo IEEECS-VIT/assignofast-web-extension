@@ -1,8 +1,14 @@
 document.addEventListener('DOMContentLoaded', function () {
     const signInButton = document.getElementById('google-btn');
+    const buttonText = document.getElementById('button-text');
+    const loader = document.querySelector('.loader');
 
     signInButton.addEventListener('click', async function () {
         try {
+            loader.style.display = 'inline-block';
+            buttonText.textContent = 'Signing in...';
+            signInButton.disabled = true;
+
             const authResult = await getAuthToken();
             const userInfo = await getUserInfo(authResult.access_token);
 
@@ -18,16 +24,26 @@ document.addEventListener('DOMContentLoaded', function () {
             await saveUserData(uid, userInfo.email, backendResponse.token);
 
             console.log('User data saved successfully');
-            window.close();
+
+            buttonText.textContent = 'Signed in';
+            loader.style.display = 'none';
+
+            setTimeout(() => {
+                window.close();
+            }, 1000);
+
         } catch (error) {
             console.error('Error during sign-in:', error);
+            loader.style.display = 'none';
+            buttonText.textContent = 'Continue with Google';
+            signInButton.disabled = false;
         }
     });
 });
 
 async function getAuthToken() {
     return new Promise((resolve, reject) => {
-        const CLIENT_ID = '889572280066-5pb75orpmet827onhpcq96hsansaer1f.apps.googleusercontent.com';
+        const CLIENT_ID = '889572280066-lb6funq2ma5ak0qgk8dqfg2329hr2q7m.apps.googleusercontent.com';
         const REDIRECT_URL = chrome.identity.getRedirectURL();
         const SCOPES = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'openid'];
 
