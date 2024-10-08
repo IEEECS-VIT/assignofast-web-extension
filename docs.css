@@ -64,8 +64,9 @@ p {
     height: auto;
     margin-left: 195px;
     border-radius: 5px;
-    border-color: white;
+    border: 0.7px solid white; /* Add a white border */
 }
+
 
 .guide-image {
     max-width: 100%;
