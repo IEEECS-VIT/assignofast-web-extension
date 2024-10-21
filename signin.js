@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const uid = firebaseUser.localId; 
 
             const backendResponse = await sendToBackend(uid, firebaseUser.idToken);
-            
+            // console.log(firebaseUser.idToken);
             await saveUserData(uid, userInfo.email, backendResponse.token);
 
             console.log('User data saved successfully');
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 async function getAuthToken() {
     return new Promise((resolve, reject) => {
-        const CLIENT_ID = '889572280066-en3he9vvnikldcrtigsfdfe5h1jsmj2e.apps.googleusercontent.com';
+        const CLIENT_ID = '889572280066-jcva8uk191u9746hc29liiulvf6sgel8.apps.googleusercontent.com';
         const REDIRECT_URL = chrome.identity.getRedirectURL();
         const SCOPES = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'openid'];
 

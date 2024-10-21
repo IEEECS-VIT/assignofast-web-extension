@@ -16,8 +16,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 chrome.action.onClicked.addListener((tab) => {
-    chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ['content.js']
-    });
+    if (tab.url.startsWith('https://vtop.vit.ac.in/vtop/content')) {
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content.js']
+        });
+    } else {
+        chrome.tabs.create({ url: "https://vtop.vit.ac.in" });
+    }
 });
