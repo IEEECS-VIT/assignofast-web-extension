@@ -284,18 +284,15 @@ async function main() {
     try {
         if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
             const { justSignedIn } = await chrome.storage.local.get(['justSignedIn']);
-
-            // Always fetch semester options when the content page loads
             const semesterOptions = await getSemesterOptions();
             
             if (justSignedIn) {
                 if (semesterOptions && semesterOptions.length > 0) {
-                    const currentSemester = semesterOptions[0].value; // Select the first semester
+                    const currentSemester = semesterOptions[0].value;
                     await chrome.storage.local.set({ currentSemester, justSignedIn: false });
                     await scrapeAndSendData(currentSemester);
                 }
             } else {
-                // Check if there's a current semester and trigger set-da
                 const { currentSemester } = await chrome.storage.local.get(['currentSemester']);
                 if (currentSemester) {
                     await scrapeAndSendData(currentSemester);
@@ -307,6 +304,20 @@ async function main() {
     }
 }
 
+async function handleDaSubmission() {
+    try {
+        const { currentSemester } = await chrome.storage.local.get(['currentSemester']);
+        if (currentSemester) {
+            console.log("DA is updating ...");            
+            await scrapeAndSendData(currentSemester);
+        } else {
+            console.error("No current semester found for DA submission");
+        }
+    } catch (error) {
+        console.error("Error handling DA submission:", error);
+    }
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "triggerSetDa") {
         scrapeAndSendData(request.semester);
@@ -314,9 +325,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.storage.local.get(['semesterOptions'], (result) => {
             sendResponse(result.semesterOptions || []);
         });
-        return true; // Indicates that the response is asynchronous
-    } else if (request.action === "triggerScrape") {
-        main(); // This will re-run the main function, which includes scraping
+        return true; 
+    } else if (request.action === "triggerDaScrape") {
+        handleDaSubmission();
     }
 });
 
