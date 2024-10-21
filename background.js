@@ -13,9 +13,12 @@ chrome.runtime.onInstalled.addListener((details) => {
     chrome.alarms.create('xhrScraperCheck', { periodInMinutes: 1/2 });
 });
 
+// Keep track of VTOP tabs
+let vtopTabs = new Set();
+
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'xhrScraperCheck') {
-        console.log("Request listening...");
+        console.log("VTOP status:", vtopTabs.size > 0 ? "Opened" : "Not Opened");
     }
 });
 
@@ -37,31 +40,68 @@ chrome.action.onClicked.addListener((tab) => {
     });
 });
 
-async function hasActiveVtopTab() {
-    const tabs = await chrome.tabs.query({url: "*://vtop.vit.ac.in/*", active: true});
-    return tabs.length > 0;
+function xhrListener(details) {
+    if (details.method === "POST" && 
+        (details.url.includes("examinations/doDAssignmentOtpUpload") ||
+         details.url.includes("examinations/doDAssignmentUploadMethod")) &&
+        details.statusCode === 200) {
+        
+        console.log("DA updation detected:", details.url);
+        chrome.tabs.sendMessage(details.tabId, {action: "triggerDaScrape"});
+    }
 }
 
-chrome.webRequest.onCompleted.addListener(
-    async function(details) {
-        if (details.method === "POST" && 
-            (details.url.includes("examinations/doDAssignmentOtpUpload") ||
-             details.url.includes("examinations/doDAssignmentUploadMethod"))) {
-            
-            console.log("Matching URL detected:", details.url);
-            
-            const isVtopActive = await hasActiveVtopTab();
-            
-            if (isVtopActive && details.statusCode === 200) {
-                chrome.tabs.sendMessage(details.tabId, {action: "triggerDaScrape"});
-            } else {
-                console.log("DA scrape not triggered: VTOP not active or status code not 200");
-            }
-        }
-    },
-    {urls: ["*://vtop.vit.ac.in/*"]},
-    ["responseHeaders"]
-);
+function addXhrListener() {
+    if (!chrome.webRequest.onCompleted.hasListener(xhrListener)) {
+        chrome.webRequest.onCompleted.addListener(
+            xhrListener,
+            {urls: ["*://vtop.vit.ac.in/*"]},
+            ["responseHeaders"]
+        );
+        console.log("DA listener added");
+    }
+}
+
+function removeXhrListener() {
+    if (chrome.webRequest.onCompleted.hasListener(xhrListener)) {
+        chrome.webRequest.onCompleted.removeListener(xhrListener);
+        console.log("DA listener removed");
+    }
+}
+
+function manageXhrListener() {
+    if (vtopTabs.size > 0) {
+        addXhrListener();
+    } else {
+        removeXhrListener();
+    }
+}
+
+function checkAndManageVtopTab(tabId, url) {
+    if (url && url.includes("vtop.vit.ac.in")) {
+        vtopTabs.add(tabId);
+    } else {
+        vtopTabs.delete(tabId);
+    }
+    manageXhrListener();
+}
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete') {
+        checkAndManageVtopTab(tabId, tab.url);
+    }
+});
+
+chrome.tabs.onActivated.addListener((activeInfo) => {
+    chrome.tabs.get(activeInfo.tabId, (tab) => {
+        checkAndManageVtopTab(tab.id, tab.url);
+    });
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+    vtopTabs.delete(tabId);
+    manageXhrListener();
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "triggerSetDa") {
