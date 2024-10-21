@@ -30,7 +30,7 @@
     "content_scripts": [
         {
             "matches": [
-                "https://vtop.vit.ac.in/*"
+                "https://vtop.vit.ac.in/vtop/content"
             ],
             "js": [
                 "content.js"

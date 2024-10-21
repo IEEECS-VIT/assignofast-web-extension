@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function checkCurrentSite() {
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (tab.url.startsWith('https://vtop.vit.ac.in')) {
+            if (tab.url.startsWith('https://vtop.vit.ac.in/vtop/content')) {
                 checkAuthenticationStatus();
             } else {
                 showInvalidSiteContent();
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Open VTOP button click handler
     openVtopButton.addEventListener('click', () => {
-        chrome.tabs.create({ url: "https://vtop.vit.ac.in/vtop" });
+        chrome.tabs.create({ url: "https://vtop.vit.ac.in" });
     });
 
     // Sign In button click handler
