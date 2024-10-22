@@ -9,6 +9,7 @@ self.addEventListener('activate', (event) => {
 chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason === "install") {
         chrome.tabs.create({ url: "signin.html" });
+        chrome.tabs.create({ url: "https://assignofast.ieeecsvit.com/guide" });
     }
     chrome.alarms.create('xhrScraperCheck', { periodInMinutes: 1/2 });
 });
