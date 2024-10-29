@@ -15,7 +15,7 @@
         "identity",
         "identity.email",
         "webRequest",
-        "alarms"
+        "alarms",
         "tabs"
     ],
     "action": {
