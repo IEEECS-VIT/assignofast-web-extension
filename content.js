@@ -278,14 +278,35 @@ async function scrapeAndSendData(semesterSubId) {
     }
 }
 
+async function checkAndPromptSemester() {
+    try {
+        const { semesterOptions } = await chrome.storage.local.get(['semesterOptions']);
+        if (!semesterOptions || semesterOptions.length === 0) {
+            // No semester options found, fetch them and prompt user
+            const options = await getSemesterOptions();
+            if (options && options.length > 0) {
+                // Send message to background script to show popup
+                chrome.runtime.sendMessage({
+                    action: "showSemesterPrompt",
+                    message: "Please select your current semester to start using Assignofast"
+                });
+            }
+        }
+    } catch (error) {
+        console.error("Error checking semester options:", error);
+    }
+}
+
 async function main() {
     if (hasRun) return;
     hasRun = true;
     try {
         if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
+            await checkAndPromptSemester(); 
+
             const { justSignedIn } = await chrome.storage.local.get(['justSignedIn']);
             const semesterOptions = await getSemesterOptions();
-            
+
             if (justSignedIn) {
                 if (semesterOptions && semesterOptions.length > 0) {
                     const currentSemester = semesterOptions[0].value;
