@@ -16,6 +16,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let selectedSemester = '';
 
+    function showInvalidSiteContent() {
+        invalidSiteContent.style.display = 'block';
+        signInContent.style.display = 'none';
+        semesterContent.style.display = 'none';
+        loader.style.display = 'none';
+        completionMessage.style.display = 'none';
+    }
+
     function showSignInContent() {
         signInContent.style.display = 'block';
         semesterContent.style.display = 'none';
@@ -178,4 +186,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     logoutSpan.addEventListener('click', logout);
+
+    async function checkCurrentSite() {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab.url.startsWith('https://vtop.vit.ac.in/vtop/content')) {
+                checkAuthenticationStatus();
+            } else {
+                showInvalidSiteContent();
+            }
+        } catch (error) {
+            console.error('Error checking current site:', error);
+            showInvalidSiteContent();
+        }
+    }
+
+    // Call checkCurrentSite when the popup loads
+    await checkCurrentSite();
+
+    // Open VTOP button click handler
+    openVtopButton.addEventListener('click', () => {
+        chrome.tabs.create({ url: "https://vtop.vit.ac.in" });
+    });
+
+    // Sign In button click handler
+    signInButton.addEventListener('click', () => {
+        chrome.tabs.create({ url: "signin.html" });
+    });
 });
