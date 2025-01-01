@@ -668,22 +668,25 @@ function transformTimeTable(scrapedData) {
                     const startTime = firstSlotTiming.split(' - ')[0];
                     const endTime = secondSlotTiming.split(' - ')[1];
                     
-                    timetable[day].push({
-                        type: 'LAB',
-                        subjectName: subject.subjectName,
-                        timing: `${startTime} - ${endTime}`,
-                        location: subject.classNumber,
-                        slotNumber: slots.join('+')
-                    });
+                    // Add to timetable only if location is not "NIL"
+                    if (subject.classNumber !== 'NIL') {
+                        timetable[day].push({
+                            type: 'LAB',
+                            subjectName: subject.subjectName,
+                            timing: `${startTime} - ${endTime}`,
+                            location: subject.classNumber,
+                            slotNumber: slots.join('+')
+                        });
+                    }
                 }
             } else {
-                // Handle theory slots (remains the same)
+                // Handle theory slots
                 const dayMappings = slotDayMapping[slot];
                 if (dayMappings) {
                     if (Array.isArray(dayMappings[0])) {
                         dayMappings.forEach(([day, timeIndex]) => {
                             const timings = theoryTimings[slot];
-                            if (timings && timings[timeIndex]) {
+                            if (timings && timings[timeIndex] && subject.classNumber !== 'NIL') {
                                 timetable[day].push({
                                     type: 'THEORY',
                                     subjectName: subject.subjectName,
@@ -696,7 +699,7 @@ function transformTimeTable(scrapedData) {
                     } else {
                         const day = dayMappings[0];
                         const timing = theoryTimings[slot];
-                        if (timing) {
+                        if (timing && subject.classNumber !== 'NIL') {
                             timetable[day].push({
                                 type: 'THEORY',
                                 subjectName: subject.subjectName,
@@ -711,17 +714,9 @@ function transformTimeTable(scrapedData) {
         });
     });
 
-    // Sort each day's schedule by timing
-    for (const day in timetable) {
-        timetable[day].sort((a, b) => {
-            const timeA = a.timing.split(' - ')[0];
-            const timeB = b.timing.split(' - ')[0];
-            return convertTimeToMinutes(timeA) - convertTimeToMinutes(timeB);
-        });
-    }
-
     return timetable;
 }
+
 
 // Helper function to convert time to minutes for sorting
 function convertTimeToMinutes(timeStr) {
