@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 async function getAuthToken() {
     return new Promise((resolve, reject) => {
-        const CLIENT_ID = '889572280066-jcva8uk191u9746hc29liiulvf6sgel8.apps.googleusercontent.com';
+        const CLIENT_ID = '889572280066-p510o3jvm01oqj9fjhecrs27hn5fi30h.apps.googleusercontent.com';
 
         const REDIRECT_URL = chrome.identity.getRedirectURL();
         const SCOPES = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'openid'];

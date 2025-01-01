@@ -324,6 +324,9 @@ async function checkAndPromptSemester() {
 async function main() {
     try {
         if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
+            if (hasRun) return; // Prevent multiple runs
+            hasRun = true; // Set flag immediately
+            
             await checkAndPromptSemester();
 
             const { justSignedIn } = await chrome.storage.local.get(['justSignedIn']);
@@ -344,6 +347,7 @@ async function main() {
         }
     } catch (error) {
         console.error("Error in main function:", error);
+        hasRun = false; 
     }
 }
 
