@@ -717,16 +717,6 @@ function transformTimeTable(scrapedData) {
     return timetable;
 }
 
-
-// Helper function to convert time to minutes for sorting
-function convertTimeToMinutes(timeStr) {
-    const [time, period] = timeStr.split(' ');
-    let [hours, minutes] = time.split(':').map(Number);
-    if (period === 'PM' && hours !== 12) hours += 12;
-    if (period === 'AM' && hours === 12) hours = 0;
-    return hours * 60 + minutes;
-}
-
 // Data formatting functions
 function formatAssignmentData(rawData) {
     if (!rawData || !rawData.courses) return null;
@@ -761,13 +751,23 @@ function formatTimeTableData(rawTimeTable) {
     
     days.forEach(day => {
         if (Array.isArray(rawTimeTable[day])) {
-            formattedTimeTable[day] = rawTimeTable[day].map(session => ({
-                type: session.type,
-                subjectName: session.subjectName,
-                timing: session.timing,
-                location: session.location,
-                slotNumber: session.slotNumber
-            }));
+            // Map and sort the sessions for each day
+            formattedTimeTable[day] = rawTimeTable[day]
+                .map(session => ({
+                    type: session.type,
+                    subjectName: session.subjectName,
+                    timing: session.timing,
+                    location: session.location,
+                    slotNumber: session.slotNumber
+                }))
+                .sort((a, b) => {
+                    // Extract start times for comparison
+                    const aStartTime = a.timing.split(' - ')[0];
+                    const bStartTime = b.timing.split(' - ')[0];
+                    
+                    // Convert times to minutes for comparison
+                    return convertTimeToMinutes(aStartTime) - convertTimeToMinutes(bStartTime);
+                });
         } else {
             formattedTimeTable[day] = [];
         }
@@ -776,6 +776,14 @@ function formatTimeTableData(rawTimeTable) {
     return formattedTimeTable;
 }
 
+// Helper function to convert time to minutes for sorting (kept for reference)
+function convertTimeToMinutes(timeStr) {
+    const [time, period] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    if (period === 'PM' && hours !== 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+}
 // Comparison functions
 function areAssignmentsEqual(formatted1, formatted2) {
     if (!formatted1 || !formatted2) return false;
