@@ -260,13 +260,17 @@ async function scrapeAndSendData(semesterSubId) {
             throw new Error('Failed to extract CSRF token or ID');
         }
 
+        // Scrape timetable first
+        const timeTableData = await scrapeTimeTable(semesterSubId, id, csrfToken);
+        console.log("Timetable data:", timeTableData);
+
+        // Continue with digital assignment scraping
         const classIds = await fetchClassIds(semesterSubId, id, csrfToken);
         if (!classIds || classIds.length === 0) {
             throw new Error('No class IDs fetched');
         }
 
         const scrapedData = await scrapeDigitalAssignments(classIds, id, csrfToken);
-
         const result = await formatAndSendData(scrapedData);
 
         // Send a message to the popup that scraping is complete
@@ -361,3 +365,44 @@ const observer = new MutationObserver(() => {
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
+
+async function scrapeTimeTable(semesterSubId, authorizedID, csrfToken) {
+    try {
+        const response = await fetch('https://vtop.vit.ac.in/vtop/processViewTimeTable', {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            body: `_csrf=${csrfToken}&semesterSubId=${semesterSubId}&authorizedID=${authorizedID}&x=${new Date().toGMTString()}`
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch timetable: ${response.statusText}`);
+        }
+
+        const data = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data, 'text/html');
+        
+        const tableBody = doc.querySelector("#studentDetailsList > div.form-group.table-responsive.col-sm-12.row > table > tbody");
+        if (!tableBody) {
+            console.log("Timetable table not found");
+            return [];
+        }
+
+        const rows = Array.from(tableBody.querySelectorAll("tr")).slice(1, -1);
+        const timeTableData = rows.map(row => ({
+            subjectName: row.querySelector("td:nth-child(3) > p:nth-child(1)")?.textContent.trim() || "N/A",
+            slotNumber: row.querySelector("td:nth-child(8) > p:nth-child(1)")?.textContent.trim() || "N/A",
+            classNumber: row.querySelector("td:nth-child(8) > p:nth-child(3)")?.textContent.trim() || "N/A"
+        }));
+
+        console.log("Timetable Data:", timeTableData);
+        return timeTableData;
+
+    } catch (error) {
+        console.error('Error scraping timetable:', error);
+        return [];
+    }
+}
