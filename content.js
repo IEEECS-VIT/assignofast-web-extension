@@ -630,27 +630,34 @@ function transformTimeTable(scrapedData) {
     };
 
     scrapedData.forEach(subject => {
-        // Remove trailing dash and split on + to get all slots
         const slots = subject.slotNumber.replace(/-$/, '').split('+').map(s => s.trim());
         
         slots.forEach(slot => {
             if (slot.startsWith('L')) {
                 // Handle lab slots
                 const day = labDayMapping[slot];
-                if (day) {
+                // Only process odd-numbered lab slots to avoid duplication
+                if (day && parseInt(slot.slice(1)) % 2 !== 0) {
+                    const labSlotNumber = parseInt(slot.slice(1));
+                    const firstSlotTiming = labTimings[`L${labSlotNumber}`];
+                    const secondSlotTiming = labTimings[`L${labSlotNumber + 1}`];
+                    
+                    // Extract start time from first slot and end time from second slot
+                    const startTime = firstSlotTiming.split(' - ')[0];
+                    const endTime = secondSlotTiming.split(' - ')[1];
+                    
                     timetable[day].push({
                         type: 'LAB',
                         subjectName: subject.subjectName,
-                        timing: labTimings[slot],
+                        timing: `${startTime} - ${endTime}`,
                         location: subject.classNumber,
-                        slotNumber: slots.join('+') // Keep the original combined slot number
+                        slotNumber: slots.join('+')
                     });
                 }
             } else {
-                // Handle all theory slots (including T slots)
+                // Handle theory slots (remains the same)
                 const dayMappings = slotDayMapping[slot];
                 if (dayMappings) {
-                    // Handle regular theory slots with multiple timings
                     if (Array.isArray(dayMappings[0])) {
                         dayMappings.forEach(([day, timeIndex]) => {
                             const timings = theoryTimings[slot];
@@ -665,7 +672,6 @@ function transformTimeTable(scrapedData) {
                             }
                         });
                     } else {
-                        // Handle additional theory slots (TA1, TB1, etc.)
                         const day = dayMappings[0];
                         const timing = theoryTimings[slot];
                         if (timing) {
