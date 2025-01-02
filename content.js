@@ -260,24 +260,44 @@ async function scrapeAndSendData(semesterSubId) {
             throw new Error('Failed to extract CSRF token or ID');
         }
 
-        // Scrape timetable first
-        const timeTableData = await scrapeTimeTable(semesterSubId, id, csrfToken);
-        console.log("Timetable data:", timeTableData);
+        // Get previous data from storage
+        const { previousTimeTable, previousAssignments } = await chrome.storage.local.get([
+            'previousTimeTable',
+            'previousAssignments'
+        ]);
 
-        // Continue with digital assignment scraping
+        // Handle TimeTable
+        const timeTableData = await scrapeTimeTable(semesterSubId, id, csrfToken);
+        const formattedTimeTable = formatTimeTableData(timeTableData);
+        
+        if (!areTimeTablesEqual(formattedTimeTable, previousTimeTable)) {
+            console.log("Timetable has changed, sending to API...");
+            await sendTimeTableToApi(formattedTimeTable);
+            await chrome.storage.local.set({ previousTimeTable: formattedTimeTable });
+        } else {
+            console.log("Timetable unchanged, skipping API call");
+        }
+
+        // Handle Assignments
         const classIds = await fetchClassIds(semesterSubId, id, csrfToken);
         if (!classIds || classIds.length === 0) {
             throw new Error('No class IDs fetched');
         }
 
-        const scrapedData = await scrapeDigitalAssignments(classIds, id, csrfToken);
-        const result = await formatAndSendData(scrapedData);
+        const rawAssignmentData = await scrapeDigitalAssignments(classIds, id, csrfToken);
+        const formattedAssignments = formatAssignmentData(rawAssignmentData);
+        
+        if (!areAssignmentsEqual(formattedAssignments, previousAssignments)) {
+            console.log("Assignments have changed, sending to API...");
+            await sendAssignmentsToApi(formattedAssignments);
+            await chrome.storage.local.set({ previousAssignments: formattedAssignments });
+        } else {
+            console.log("Assignments unchanged, skipping API call");
+        }
 
-        // Send a message to the popup that scraping is complete
         chrome.runtime.sendMessage({ action: "scrapingComplete" });
     } catch (error) {
         console.error('Error in scrapeAndSendData:', error);
-        // Send a message to the popup that scraping failed
         chrome.runtime.sendMessage({ action: "scrapingFailed", error: error.message });
     }
 }
@@ -302,10 +322,11 @@ async function checkAndPromptSemester() {
 }
 
 async function main() {
-    if (hasRun) return;
-    hasRun = true;
     try {
         if (window.location.href.includes('vtop.vit.ac.in/vtop/content')) {
+            if (hasRun) return; // Prevent multiple runs
+            hasRun = true; // Set flag immediately
+            
             await checkAndPromptSemester();
 
             const { justSignedIn } = await chrome.storage.local.get(['justSignedIn']);
@@ -326,6 +347,7 @@ async function main() {
         }
     } catch (error) {
         console.error("Error in main function:", error);
+        hasRun = false; 
     }
 }
 
@@ -646,22 +668,25 @@ function transformTimeTable(scrapedData) {
                     const startTime = firstSlotTiming.split(' - ')[0];
                     const endTime = secondSlotTiming.split(' - ')[1];
                     
-                    timetable[day].push({
-                        type: 'LAB',
-                        subjectName: subject.subjectName,
-                        timing: `${startTime} - ${endTime}`,
-                        location: subject.classNumber,
-                        slotNumber: slots.join('+')
-                    });
+                    // Add to timetable only if location is not "NIL"
+                    if (subject.classNumber !== 'NIL') {
+                        timetable[day].push({
+                            type: 'LAB',
+                            subjectName: subject.subjectName,
+                            timing: `${startTime} - ${endTime}`,
+                            location: subject.classNumber,
+                            slotNumber: slots.join('+')
+                        });
+                    }
                 }
             } else {
-                // Handle theory slots (remains the same)
+                // Handle theory slots
                 const dayMappings = slotDayMapping[slot];
                 if (dayMappings) {
                     if (Array.isArray(dayMappings[0])) {
                         dayMappings.forEach(([day, timeIndex]) => {
                             const timings = theoryTimings[slot];
-                            if (timings && timings[timeIndex]) {
+                            if (timings && timings[timeIndex] && subject.classNumber !== 'NIL') {
                                 timetable[day].push({
                                     type: 'THEORY',
                                     subjectName: subject.subjectName,
@@ -674,7 +699,7 @@ function transformTimeTable(scrapedData) {
                     } else {
                         const day = dayMappings[0];
                         const timing = theoryTimings[slot];
-                        if (timing) {
+                        if (timing && subject.classNumber !== 'NIL') {
                             timetable[day].push({
                                 type: 'THEORY',
                                 subjectName: subject.subjectName,
@@ -689,23 +714,180 @@ function transformTimeTable(scrapedData) {
         });
     });
 
-    // Sort each day's schedule by timing
-    for (const day in timetable) {
-        timetable[day].sort((a, b) => {
-            const timeA = a.timing.split(' - ')[0];
-            const timeB = b.timing.split(' - ')[0];
-            return convertTimeToMinutes(timeA) - convertTimeToMinutes(timeB);
-        });
-    }
-
     return timetable;
 }
 
-// Helper function to convert time to minutes for sorting
+// Data formatting functions
+function formatAssignmentData(rawData) {
+    if (!rawData || !rawData.courses) return null;
+    
+    const formattedClasses = rawData.courses.map(course => {
+        if (!course.class_id || !course.course_code || !course.course_title || !Array.isArray(course.duedates)) {
+            console.error('Invalid course data:', course);
+            return null;
+        }
+
+        const validDuedates = course.duedates.filter(duedate =>
+            duedate.assessment_title && duedate.date_due !== undefined
+        );
+
+        return {
+            class_id: course.class_id,
+            course_code: course.course_code,
+            course_title: course.course_title,
+            course_assignments: validDuedates
+        };
+    }).filter(course => course !== null);
+
+    return formattedClasses;
+}
+
+function formatTimeTableData(rawTimeTable) {
+    // Return null if the input is invalid
+    if (!rawTimeTable) return null;
+    
+    const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+    const formattedTimeTable = {};
+    
+    days.forEach(day => {
+        if (Array.isArray(rawTimeTable[day])) {
+            // Map and sort the sessions for each day
+            formattedTimeTable[day] = rawTimeTable[day]
+                .map(session => ({
+                    type: session.type,
+                    subjectName: session.subjectName,
+                    timing: session.timing,
+                    location: session.location,
+                    slotNumber: session.slotNumber
+                }))
+                .sort((a, b) => {
+                    // Extract start times for comparison
+                    const aStartTime = a.timing.split(' - ')[0];
+                    const bStartTime = b.timing.split(' - ')[0];
+                    
+                    // Convert times to minutes for comparison
+                    return convertTimeToMinutes(aStartTime) - convertTimeToMinutes(bStartTime);
+                });
+        } else {
+            formattedTimeTable[day] = [];
+        }
+    });
+    
+    return formattedTimeTable;
+}
+
+// Helper function to convert time to minutes for sorting (kept for reference)
 function convertTimeToMinutes(timeStr) {
     const [time, period] = timeStr.split(' ');
     let [hours, minutes] = time.split(':').map(Number);
     if (period === 'PM' && hours !== 12) hours += 12;
     if (period === 'AM' && hours === 12) hours = 0;
     return hours * 60 + minutes;
+}
+// Comparison functions
+function areAssignmentsEqual(formatted1, formatted2) {
+    if (!formatted1 || !formatted2) return false;
+    if (formatted1.length !== formatted2.length) return false;
+    
+    return formatted1.every((course1, index) => {
+        const course2 = formatted2[index];
+        if (course1.class_id !== course2.class_id ||
+            course1.course_code !== course2.course_code ||
+            course1.course_title !== course2.course_title ||
+            course1.course_assignments.length !== course2.course_assignments.length) {
+            return false;
+        }
+        
+        return course1.course_assignments.every((assignment1, i) => {
+            const assignment2 = course2.course_assignments[i];
+            return assignment1.assessment_title === assignment2.assessment_title &&
+                   assignment1.date_due === assignment2.date_due &&
+                   assignment1.is_submitted === assignment2.is_submitted &&
+                   assignment1.last_updated === assignment2.last_updated &&
+                   assignment1.status === assignment2.status;
+        });
+    });
+}
+
+function areTimeTablesEqual(formatted1, formatted2) {
+    if (!formatted1 || !formatted2) return false;
+    
+    const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+    
+    return days.every(day => {
+        if (!formatted1[day] || !formatted2[day]) return false;
+        if (formatted1[day].length !== formatted2[day].length) return false;
+        
+        return formatted1[day].every((class1, index) => {
+            const class2 = formatted2[day][index];
+            return class1.type === class2.type &&
+                   class1.subjectName === class2.subjectName &&
+                   class1.timing === class2.timing &&
+                   class1.location === class2.location &&
+                   class1.slotNumber === class2.slotNumber;
+        });
+    });
+}
+
+// API communication functions
+async function sendAssignmentsToApi(formattedData) {
+    try {
+        const { uid } = await chrome.storage.local.get(['uid']);
+        const authToken = await checkAuthentication();
+
+        const payload = {
+            uid: uid,
+            classes: formattedData
+        };
+
+        const response = await fetch('https://assignofast-backend.vercel.app/assignments/set-da', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error sending assignments to API:', error);
+        throw error;
+    }
+}
+
+async function sendTimeTableToApi(formattedTimeTable) {
+    try {
+        const { uid } = await chrome.storage.local.get(['uid']);
+        const authToken = await checkAuthentication();
+
+        const payload = {
+            uid: uid,
+            timetable: formattedTimeTable
+        };
+
+        const response = await fetch('https://assignofast-backend.vercel.app/timetable/set-timetable', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error sending timetable to API:', error);
+        throw error;
+    }
 }
