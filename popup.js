@@ -117,18 +117,46 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showSemesterContent();
                 userEmailSpan.textContent = email;
                 userInfoDiv.style.display = 'block';
+                
+                // Get current tab to check if we're on VTOP
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                const isOnVtop = tab.url.startsWith('https://vtop.vit.ac.in/vtop/content');
+                
                 const savedSettings = await chrome.storage.local.get(['currentSemester', 'currentSemesterName', 'semesterOptions']);
                 if (savedSettings.currentSemester) {
                     currentSemesterSpan.textContent = savedSettings.currentSemesterName;
                     semesterSelect.value = savedSettings.currentSemester;
                 }
-                
-                if (!savedSettings.semesterOptions || savedSettings.semesterOptions.length === 0) {
-                    const refreshMessage = document.createElement('p');
-                    refreshMessage.className = 'refresh-message';
-                    refreshMessage.textContent = 'Please refresh the VTOP page to load semester options';
-                    semesterContent.insertBefore(refreshMessage, semesterSelect.parentElement);
-                } else {
+
+                // Only check for real-time semester options if we're on VTOP
+                if (isOnVtop) {
+                    // Send a message to content script to get current semester options
+                    chrome.tabs.sendMessage(tab.id, { action: "getSemesterOptions" }, response => {
+                        if (chrome.runtime.lastError) {
+                            console.error(chrome.runtime.lastError);
+                            return;
+                        }
+                        
+                        // If we got a response with options, use those
+                        if (response && response.length > 0) {
+                            populateSemesterOptions(response);
+                            return;
+                        }
+                        
+                        // If no response but we have saved options, use those
+                        if (savedSettings.semesterOptions && savedSettings.semesterOptions.length > 0) {
+                            populateSemesterOptions(savedSettings.semesterOptions);
+                            return;
+                        }
+
+                        // Only show refresh message if we have neither current nor saved options
+                        const refreshMessage = document.createElement('p');
+                        refreshMessage.className = 'refresh-message';
+                        refreshMessage.textContent = 'Please refresh the VTOP page to load semester options';
+                        semesterContent.insertBefore(refreshMessage, semesterSelect.parentElement);
+                    });
+                } else if (savedSettings.semesterOptions && savedSettings.semesterOptions.length > 0) {
+                    // If not on VTOP but have saved options, use those
                     populateSemesterOptions(savedSettings.semesterOptions);
                 }
             } else {
@@ -188,6 +216,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === "semesterOptionsUpdated") {
             populateSemesterOptions(request.options);
+            // Remove any existing refresh message
+            const existingMessage = document.querySelector('.refresh-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
         }
     });
 
