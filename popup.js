@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     function logout() {
-        chrome.storage.local.remove(['uid', 'email', 'authToken'], () => {
+        chrome.storage.local.remove(['uid', 'email', 'authToken', 'previousTimeTable' , 'previousAssignments' , 'currentSemester' , 'justSignedIn' , 'semesterOptions'], () => {
             showSignInContent();
             userInfoDiv.style.display = 'none';
         });
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Open VTOP button click handler
     openVtopButton.addEventListener('click', () => {
-        chrome.tabs.create({ url: "https://vtop.vit.ac.in" });
+        chrome.tabs.create({ url: "https://vtop.vit.ac.in/vtop/content" });
     });
 
     // Sign In button click handler
