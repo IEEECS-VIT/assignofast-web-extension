@@ -116,11 +116,11 @@ async function scrapeAndSendData(semesterSubId) {
         const formattedTimeTable = formatTimeTableData(timeTableData);
         
         if (!areTimeTablesEqual(formattedTimeTable, previousTimeTable)) {
-            console.log("Timetable has changed, sending to API...");
+            console.debug("Timetable has changed, sending to API...");
             await sendTimeTableToApi(formattedTimeTable);
             await chrome.storage.local.set({ previousTimeTable: formattedTimeTable });
         } else {
-            console.log("Timetable unchanged, skipping API call");
+            console.debug("Timetable unchanged, skipping API call");
         }
 
         // Handle Assignments
@@ -133,11 +133,11 @@ async function scrapeAndSendData(semesterSubId) {
         const formattedAssignments = formatAssignmentData(rawAssignmentData);
         
         if (!areAssignmentsEqual(formattedAssignments, previousAssignments)) {
-            console.log("Assignments have changed, sending to API...");
+            console.debug("Assignments have changed, sending to API...");
             await sendAssignmentsToApi(formattedAssignments);
             await chrome.storage.local.set({ previousAssignments: formattedAssignments });
         } else {
-            console.log("Assignments unchanged, skipping API call");
+            console.debug("Assignments unchanged, skipping API call");
         }
 
         chrome.runtime.sendMessage({ action: "scrapingComplete" });

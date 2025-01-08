@@ -32,10 +32,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const uid = firebaseUser.localId; 
 
             const backendResponse = await sendToBackend(uid, firebaseUser.idToken);
-            // console.log(firebaseUser.idToken);
+            // console.debug(firebaseUser.idToken);
             await saveUserData(uid, userInfo.email, backendResponse.token);
 
-            console.log('User data saved successfully');
+            console.debug('User data saved successfully');
 
             buttonText.textContent = 'Signed in';
             loader.style.display = 'none';

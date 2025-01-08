@@ -88,7 +88,7 @@ self.addEventListener('install', event => {
     event.waitUntil(
         (async () => {
             try {
-                console.log('Service worker installed');
+                console.debug('Service worker installed');
             } catch (error) {
                 console.debug('Install error:', error);
             }
@@ -100,7 +100,7 @@ self.addEventListener('activate', event => {
     event.waitUntil(
         (async () => {
             try {
-                console.log('Service worker activated');
+                console.debug('Service worker activated');
             } catch (error) {
                 console.debug('Activation error:', error);
             }
@@ -122,11 +122,11 @@ self.addEventListener('message', event => {
 });
 
 self.addEventListener('install', (event) => {
-    console.log('Service worker installed');
+    console.debug('Service worker installed');
 });
 
 self.addEventListener('activate', (event) => {
-    console.log('Service worker activated');
+    console.debug('Service worker activated');
 });
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -142,7 +142,7 @@ let vtopTabs = new Set();
 
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'xhrScraperCheck') {
-        console.log("VTOP status:", vtopTabs.size > 0 ? "Opened" : "Not Opened");
+        console.debug("VTOP status:", vtopTabs.size > 0 ? "Opened" : "Not Opened");
     }
 });
 
@@ -188,7 +188,7 @@ function xhrListener(details) {
             details.url.includes("examinations/doDAssignmentUploadMethod")) &&
         details.statusCode === 200) {
 
-        console.log("DA updation detected:", details.url);
+        console.debug("DA updation detected:", details.url);
         chrome.tabs.sendMessage(details.tabId, { action: "triggerDaScrape" });
     }
 }
@@ -200,14 +200,14 @@ function addXhrListener() {
             { urls: ["*://vtop.vit.ac.in/*"] },
             ["responseHeaders"]
         );
-        console.log("DA listener added");
+        console.debug("DA listener added");
     }
 }
 
 function removeXhrListener() {
     if (chrome.webRequest.onCompleted.hasListener(xhrListener)) {
         chrome.webRequest.onCompleted.removeListener(xhrListener);
-        console.log("DA listener removed");
+        console.debug("DA listener removed");
     }
 }
 
@@ -294,4 +294,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-console.log('Background script loaded');
+console.debug('Background script loaded');

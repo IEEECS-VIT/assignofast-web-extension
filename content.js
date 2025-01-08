@@ -46,7 +46,7 @@ async function handleDaSubmission() {
     try {
         const { currentSemester } = await chrome.storage.local.get(['currentSemester']);
         if (currentSemester) {
-            console.log("DA is updating ...");
+            console.debug("DA is updating ...");
             await scrapeAndSendData(currentSemester);
         } else {
             // console.error("No current semester found for DA submission");

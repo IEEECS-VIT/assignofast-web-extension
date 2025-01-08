@@ -222,7 +222,7 @@ async function scrapeTimeTable(semesterSubId, authorizedID, csrfToken) {
 
         const tableBody = doc.querySelector("#studentDetailsList > div.form-group.table-responsive.col-sm-12.row > table > tbody");
         if (!tableBody) {
-            console.log("Timetable table not found");
+            console.debug("Timetable table not found");
             return [];
         }
 
@@ -233,9 +233,9 @@ async function scrapeTimeTable(semesterSubId, authorizedID, csrfToken) {
             classNumber: row.querySelector("td:nth-child(8) > p:nth-child(3)")?.textContent.trim() || "N/A"
         }));
 
-        console.log("Timetable Data:", timeTableData);
+        console.debug("Timetable Data:", timeTableData);
         const transformedTimeTable = transformTimeTable(timeTableData);
-        console.log("Transformed Timetable:", transformedTimeTable);
+        console.debug("Transformed Timetable:", transformedTimeTable);
         return transformedTimeTable;
 
     } catch (error) {
