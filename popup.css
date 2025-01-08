@@ -225,6 +225,13 @@ button:hover {
     background-color: #cc0000;
 }
 
+.refresh-message {
+    color: #ff6b6b;
+    font-size: 14px;
+    margin: 10px 0;
+    text-align: center;
+}
+
 .user-info {
     position: absolute;
     bottom: 10px;

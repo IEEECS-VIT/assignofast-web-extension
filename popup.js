@@ -57,13 +57,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (options && Array.isArray(options)) {
             options.forEach(option => {
                 const optElement = document.createElement('option');
-                optElement.value = option.value;
-                optElement.textContent = option.text;
+                optElement.value = option.id;
+                optElement.textContent = option.name;
                 semesterSelect.appendChild(optElement);
             });
         }
     }
-
+    
     function showConfirmationModal() {
         confirmationModal.style.display = 'block';
     }
@@ -72,14 +72,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         confirmationModal.style.display = 'none';
     }
 
-    async function updateSemester(newSemester) {
+    async function updateSemester(newSemesterId) {
         try {
             showLoader();
-            await chrome.storage.local.set({ currentSemester: newSemester });
-            currentSemesterSpan.textContent = newSemester;
+            const options = await chrome.storage.local.get(['semesterOptions']);
+            const semesterName = options.semesterOptions.find(opt => opt.id === newSemesterId)?.name || '';
+            
+            await chrome.storage.local.set({ 
+                currentSemester: newSemesterId,
+                currentSemesterName: semesterName
+            });
+            
+            currentSemesterSpan.textContent = semesterName;
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            await chrome.tabs.sendMessage(tab.id, { action: "triggerSetDa", semester: newSemester });
-
+            await chrome.tabs.sendMessage(tab.id, { 
+                action: "triggerSetDa", 
+                semester: newSemesterId 
+            });
+    
             // Wait for the scraping and sending process to complete
             await new Promise(resolve => {
                 chrome.runtime.onMessage.addListener(function listener(request) {
@@ -89,12 +99,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
             });
-
-            // Show completion message after scraping is done
+    
             showCompletionMessage();
             setTimeout(() => {
                 showSemesterContent();
-            }, 3000); // Show completion message for 3 seconds
+            }, 3000);
         } catch (error) {
             console.error('Error saving semester or triggering set-da:', error);
             showSemesterContent();
@@ -108,12 +117,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showSemesterContent();
                 userEmailSpan.textContent = email;
                 userInfoDiv.style.display = 'block';
-                const savedSettings = await chrome.storage.local.get(['currentSemester', 'semesterOptions']);
+                const savedSettings = await chrome.storage.local.get(['currentSemester', 'currentSemesterName', 'semesterOptions']);
                 if (savedSettings.currentSemester) {
-                    currentSemesterSpan.textContent = savedSettings.currentSemester;
+                    currentSemesterSpan.textContent = savedSettings.currentSemesterName;
                     semesterSelect.value = savedSettings.currentSemester;
                 }
-                populateSemesterOptions(savedSettings.semesterOptions);
+                
+                if (!savedSettings.semesterOptions || savedSettings.semesterOptions.length === 0) {
+                    const refreshMessage = document.createElement('p');
+                    refreshMessage.className = 'refresh-message';
+                    refreshMessage.textContent = 'Please refresh the VTOP page to load semester options';
+                    semesterContent.insertBefore(refreshMessage, semesterSelect.parentElement);
+                } else {
+                    populateSemesterOptions(savedSettings.semesterOptions);
+                }
             } else {
                 showSignInContent();
                 userInfoDiv.style.display = 'none';
@@ -124,9 +141,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             userInfoDiv.style.display = 'none';
         }
     }
+    
 
     // Call checkAuthenticationStatus when the popup loads
-    await checkAuthenticationStatus();
+    // await checkAuthenticationStatus();
 
     // Sign In button click handler
     signInButton.addEventListener('click', () => {
@@ -191,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             if (tab.url.startsWith('https://vtop.vit.ac.in/vtop/content')) {
-                checkAuthenticationStatus();
+                await checkAuthenticationStatus();
             } else {
                 showInvalidSiteContent();
             }
