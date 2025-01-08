@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     function logout() {
-        chrome.storage.local.remove(['uid', 'email', 'authToken', 'previousTimeTable' , 'previousAssignments' , 'currentSemester' , 'justSignedIn' , 'semesterOptions'], () => {
+        chrome.storage.local.remove(['uid', 'email', 'authToken', 'previousTimeTable' , 'previousAssignments' , 'currentSemester' , 'justSignedIn' , 'semesterOptions' , 'currentSemesterName'], () => {
             showSignInContent();
             userInfoDiv.style.display = 'none';
         });
