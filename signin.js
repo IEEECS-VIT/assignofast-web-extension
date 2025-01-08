@@ -1,3 +1,15 @@
+// Global error handler for window context
+window.onerror = function(msg, url, line, col, error) {
+    console.debug('Caught error:', { msg, url, line, col, error });
+    return true;
+};
+
+// Global error handler for unhandled promise rejections
+window.onunhandledrejection = function(event) {
+    console.debug('Caught promise rejection:', event.reason);
+    event.preventDefault();
+};
+
 document.addEventListener('DOMContentLoaded', function () {
     const signInButton = document.getElementById('google-btn');
     const buttonText = document.getElementById('button-text');
@@ -20,10 +32,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const uid = firebaseUser.localId; 
 
             const backendResponse = await sendToBackend(uid, firebaseUser.idToken);
-            // console.log(firebaseUser.idToken);
+            // console.debug(firebaseUser.idToken);
             await saveUserData(uid, userInfo.email, backendResponse.token);
 
-            console.log('User data saved successfully');
+            console.debug('User data saved successfully');
 
             buttonText.textContent = 'Signed in';
             loader.style.display = 'none';

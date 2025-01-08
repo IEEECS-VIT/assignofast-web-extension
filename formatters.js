@@ -4,7 +4,7 @@ function formatAssignmentData(rawData) {
     
     const formattedClasses = rawData.courses.map(course => {
         if (!course.class_id || !course.course_code || !course.course_title || !Array.isArray(course.duedates)) {
-            console.error('Invalid course data:', course);
+            // console.error('Invalid course data:', course);
             return null;
         }
 

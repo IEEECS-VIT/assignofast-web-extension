@@ -1,12 +1,29 @@
+// Global error handler for window context
+window.onerror = function(msg, url, line, col, error) {
+    console.debug('Caught error:', { msg, url, line, col, error });
+    return true;
+};
+
+// Global error handler for unhandled promise rejections
+window.onunhandledrejection = function(event) {
+    console.debug('Caught promise rejection:', event.reason);
+    event.preventDefault();
+};
 // API communication functions
 async function sendAssignmentsToApi(formattedData) {
     try {
-        const { uid } = await chrome.storage.local.get(['uid']);
+        const { uid, currentSemester, currentSemesterName } = await chrome.storage.local.get([
+            'uid', 
+            'currentSemester',
+            'currentSemesterName'
+        ]);
         const authToken = await checkAuthentication();
 
         const payload = {
             uid: uid,
-            classes: formattedData
+            classes: formattedData,
+            semesterId: currentSemester,
+            semesterName: currentSemesterName
         };
 
         const response = await fetch('https://assignofast-backend.vercel.app/assignments/set-da', {
@@ -25,19 +42,25 @@ async function sendAssignmentsToApi(formattedData) {
 
         return await response.json();
     } catch (error) {
-        console.error('Error sending assignments to API:', error);
-        throw error;
+        // console.error('Error sending assignments to API:', error);
+        // throw error;
     }
 }
 
 async function sendTimeTableToApi(formattedTimeTable) {
     try {
-        const { uid } = await chrome.storage.local.get(['uid']);
+        const { uid, currentSemester, currentSemesterName } = await chrome.storage.local.get([
+            'uid', 
+            'currentSemester',
+            'currentSemesterName'
+        ]);
         const authToken = await checkAuthentication();
 
         const payload = {
             uid: uid,
-            timetable: formattedTimeTable
+            timetable: formattedTimeTable,
+            semesterId: currentSemester,
+            semesterName: currentSemesterName
         };
 
         const response = await fetch('https://assignofast-backend.vercel.app/timetable/set-timetable', {
@@ -56,8 +79,8 @@ async function sendTimeTableToApi(formattedTimeTable) {
 
         return await response.json();
     } catch (error) {
-        console.error('Error sending timetable to API:', error);
-        throw error;
+        // console.error('Error sending timetable to API:', error);
+        // throw error;
     }
 }
 
@@ -69,61 +92,11 @@ async function checkAuthentication() {
         }
         return authToken;
     } catch (error) {
-        console.error('Authentication check failed:', error);
-        throw error;
+        // console.error('Authentication check failed:', error);
+        // throw error;
     }
 }
 
-async function formatAndSendData(data) {
-    const formattedClasses = data.courses.map(course => {
-        if (!course.class_id || !course.course_code || !course.course_title || !Array.isArray(course.duedates)) {
-            console.error('Invalid course data:', course);
-            return null;
-        }
-
-        const validDuedates = course.duedates.filter(duedate =>
-            duedate.assessment_title && duedate.date_due !== undefined
-        );
-
-        return {
-            class_id: course.class_id,
-            course_code: course.course_code,
-            course_title: course.course_title,
-            course_assignments: validDuedates
-        };
-    }).filter(course => course !== null);
-
-    const { uid } = await chrome.storage.local.get(['uid']);
-
-    const payload = {
-        uid: uid,
-        classes: formattedClasses
-    };
-
-    try {
-        const authToken = await checkAuthentication();
-
-        const response = await fetch('https://assignofast-backend.vercel.app/assignments/set-da', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-        }
-
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('Error sending data:', error);
-        throw error;
-    }
-}
 
 async function scrapeAndSendData(semesterSubId) {
     try {
@@ -143,11 +116,11 @@ async function scrapeAndSendData(semesterSubId) {
         const formattedTimeTable = formatTimeTableData(timeTableData);
         
         if (!areTimeTablesEqual(formattedTimeTable, previousTimeTable)) {
-            console.log("Timetable has changed, sending to API...");
+            console.debug("Timetable has changed, sending to API...");
             await sendTimeTableToApi(formattedTimeTable);
             await chrome.storage.local.set({ previousTimeTable: formattedTimeTable });
         } else {
-            console.log("Timetable unchanged, skipping API call");
+            console.debug("Timetable unchanged, skipping API call");
         }
 
         // Handle Assignments
@@ -160,17 +133,17 @@ async function scrapeAndSendData(semesterSubId) {
         const formattedAssignments = formatAssignmentData(rawAssignmentData);
         
         if (!areAssignmentsEqual(formattedAssignments, previousAssignments)) {
-            console.log("Assignments have changed, sending to API...");
+            console.debug("Assignments have changed, sending to API...");
             await sendAssignmentsToApi(formattedAssignments);
             await chrome.storage.local.set({ previousAssignments: formattedAssignments });
         } else {
-            console.log("Assignments unchanged, skipping API call");
+            console.debug("Assignments unchanged, skipping API call");
         }
 
         chrome.runtime.sendMessage({ action: "scrapingComplete" });
     } catch (error) {
-        console.error('Error in scrapeAndSendData:', error);
-        chrome.runtime.sendMessage({ action: "scrapingFailed", error: error.message });
+        // console.error('Error in scrapeAndSendData:', error);
+        // chrome.runtime.sendMessage({ action: "scrapingFailed", error: error.message });
     }
 }
 
