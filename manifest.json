@@ -15,8 +15,7 @@
         "identity",
         "identity.email",
         "webRequest",
-        "alarms",
-        "tabs"
+        "alarms"
     ],
     "action": {
         "default_popup": "popup.html",
@@ -35,6 +34,11 @@
                 "https://vtop.vit.ac.in/vtop/content"
             ],
             "js": [
+                "utils.js",
+                "comparators.js",
+                "formatters.js",
+                "scraper.js",
+                "api.js",
                 "content.js"
             ]
         }
