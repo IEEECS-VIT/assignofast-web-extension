@@ -1,12 +1,18 @@
 // API communication functions
 async function sendAssignmentsToApi(formattedData) {
     try {
-        const { uid } = await chrome.storage.local.get(['uid']);
+        const { uid, currentSemester, currentSemesterName } = await chrome.storage.local.get([
+            'uid', 
+            'currentSemester',
+            'currentSemesterName'
+        ]);
         const authToken = await checkAuthentication();
 
         const payload = {
             uid: uid,
-            classes: formattedData
+            classes: formattedData,
+            semesterId: currentSemester,
+            semesterName: currentSemesterName
         };
 
         const response = await fetch('https://assignofast-backend.vercel.app/assignments/set-da', {
@@ -32,12 +38,18 @@ async function sendAssignmentsToApi(formattedData) {
 
 async function sendTimeTableToApi(formattedTimeTable) {
     try {
-        const { uid } = await chrome.storage.local.get(['uid']);
+        const { uid, currentSemester, currentSemesterName } = await chrome.storage.local.get([
+            'uid', 
+            'currentSemester',
+            'currentSemesterName'
+        ]);
         const authToken = await checkAuthentication();
 
         const payload = {
             uid: uid,
-            timetable: formattedTimeTable
+            timetable: formattedTimeTable,
+            semesterId: currentSemester,
+            semesterName: currentSemesterName
         };
 
         const response = await fetch('https://assignofast-backend.vercel.app/timetable/set-timetable', {
