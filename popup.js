@@ -209,8 +209,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         chrome.tabs.create({ url: "https://vtop.vit.ac.in/vtop/content" });
     });
 
-    // Sign In button click handler
-    signInButton.addEventListener('click', () => {
-        chrome.tabs.create({ url: "signin.html" });
-    });
+    
 });
