@@ -65,10 +65,12 @@ async function getSemesterOptions() {
             throw new Error('Failed to find semester dropdown');
         }
 
-        const options = Array.from(selectElement.children).map(option => ({
-            value: option.value,
-            text: option.textContent,
-        }));
+        const options = Array.from(selectElement.children)
+            .filter(option => option.value && !option.value.includes('Choose'))
+            .map(option => ({
+                id: option.value,
+                name: option.textContent.trim(),
+            }));
 
         await chrome.storage.local.set({ semesterOptions: options });
         chrome.runtime.sendMessage({ action: "semesterOptionsUpdated", options });
