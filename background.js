@@ -1,3 +1,126 @@
+// Generic error handlers
+self.onerror = function(msg, url, line, col, error) {
+    console.debug('Caught error:', { msg, url, line, col, error });
+    return true; // Prevents the error from being shown
+};
+
+self.onunhandledrejection = function(event) {
+    console.debug('Caught promise rejection:', event.reason);
+    event.preventDefault(); // Prevents the error from being shown
+};
+
+// Wrap chrome messaging APIs to catch specific errors
+const originalRuntimeSendMessage = chrome.runtime.sendMessage;
+chrome.runtime.sendMessage = function(...args) {
+    return new Promise((resolve) => {
+        try {
+            originalRuntimeSendMessage.call(chrome.runtime, ...args)
+                .then(resolve)
+                .catch(() => resolve(null));
+        } catch {
+            resolve(null);
+        }
+    });
+};
+
+if (chrome.tabs) {
+    const originalTabsSendMessage = chrome.tabs.sendMessage;
+    chrome.tabs.sendMessage = function(...args) {
+        return new Promise((resolve) => {
+            try {
+                originalTabsSendMessage.call(chrome.tabs, ...args)
+                    .then(resolve)
+                    .catch(() => resolve(null));
+            } catch {
+                resolve(null);
+            }
+        });
+    };
+}
+
+// Global error handler for service worker
+self.onerror = function(msg, url, line, col, error) {
+    console.debug('Caught error:', { msg, url, line, col, error });
+    return true; // Prevents the firing of the default event handler
+};
+
+// Global error handler for unhandled promise rejections in service worker
+self.onunhandledrejection = function(event) {
+    console.debug('Caught promise rejection:', event.reason);
+    event.preventDefault();
+};
+
+// Wrap Chrome API calls
+const originalChromeRuntime = chrome.runtime.sendMessage;
+chrome.runtime.sendMessage = function(...args) {
+    try {
+        return originalChromeRuntime.apply(chrome.runtime, args);
+    } catch (e) {
+        console.debug('Chrome runtime error:', e);
+        return undefined;
+    }
+};
+
+if (chrome.tabs) {
+    const originalChromeTabs = chrome.tabs.sendMessage;
+    chrome.tabs.sendMessage = function(...args) {
+        try {
+            return originalChromeTabs.apply(chrome.tabs, args);
+        } catch (e) {
+            console.debug('Chrome tabs error:', e);
+            return undefined;
+        }
+    };
+}
+
+// Error handler for all fetch requests
+self.addEventListener('fetch', event => {
+    event.respondWith(
+        fetch(event.request).catch(error => {
+            console.debug('Fetch error:', error);
+            return new Response();
+        })
+    );
+});
+
+// Add error handling for other service worker events
+self.addEventListener('install', event => {
+    event.waitUntil(
+        (async () => {
+            try {
+                console.log('Service worker installed');
+            } catch (error) {
+                console.debug('Install error:', error);
+            }
+        })()
+    );
+});
+
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        (async () => {
+            try {
+                console.log('Service worker activated');
+            } catch (error) {
+                console.debug('Activation error:', error);
+            }
+        })()
+    );
+});
+
+// Add error handling for message events
+self.addEventListener('message', event => {
+    event.waitUntil(
+        (async () => {
+            try {
+                // Handle message
+            } catch (error) {
+                console.debug('Message handling error:', error);
+            }
+        })()
+    );
+});
+
 self.addEventListener('install', (event) => {
     console.log('Service worker installed');
 });
@@ -138,7 +261,7 @@ async function checkSemesterStatus(tabId, url) {
                 });
             }
         } catch (error) {
-            console.error("Error checking semester status:", error);
+            // console.error("Error checking semester status:", error);
         }
     }
 }

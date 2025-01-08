@@ -1,3 +1,15 @@
+// Global error handler for window context
+window.onerror = function(msg, url, line, col, error) {
+    console.debug('Caught error:', { msg, url, line, col, error });
+    return true;
+};
+
+// Global error handler for unhandled promise rejections
+window.onunhandledrejection = function(event) {
+    console.debug('Caught promise rejection:', event.reason);
+    event.preventDefault();
+};
+
 document.addEventListener('DOMContentLoaded', function () {
     const signInButton = document.getElementById('google-btn');
     const buttonText = document.getElementById('button-text');

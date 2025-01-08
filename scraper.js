@@ -1,3 +1,14 @@
+// Global error handler for window context
+window.onerror = function(msg, url, line, col, error) {
+    console.debug('Caught error:', { msg, url, line, col, error });
+    return true;
+};
+
+// Global error handler for unhandled promise rejections
+window.onunhandledrejection = function(event) {
+    console.debug('Caught promise rejection:', event.reason);
+    event.preventDefault();
+};
 
 async function fetchHtml(url, options = {}) {
     try {
@@ -7,7 +18,7 @@ async function fetchHtml(url, options = {}) {
         }
         return await response.text();
     } catch (error) {
-        console.error(`Error fetching URL: ${url}`, error);
+        // console.error(`Error fetching URL: ${url}`, error);
         return null;
     }
 }
@@ -20,7 +31,7 @@ function extractCsrfTokenAndId(htmlString) {
     const idElement = doc.querySelector('input[name="authorizedID"]');
 
     if (!csrfElement || !idElement) {
-        console.error("CSRF token or ID element not found");
+        // console.error("CSRF token or ID element not found");
         return null;
     }
 
@@ -78,7 +89,7 @@ async function getSemesterOptions() {
         return options;
 
     } catch (error) {
-        console.error('Error fetching semester options:', error);
+        // console.error('Error fetching semester options:', error);
         return [];
     }
 }
@@ -115,7 +126,7 @@ async function fetchClassIds(semesterSubId, authorizedID, csrfToken) {
 
         return classIds;
     } catch (error) {
-        console.error('Error in fetchClassIds:', error);
+        // console.error('Error in fetchClassIds:', error);
         throw error;
     }
 }
@@ -173,7 +184,7 @@ async function scrapeDigitalAssignments(classIds, authorizedID, csrfToken) {
                 };
             })
             .catch(error => {
-                console.error(`Error processing class ID ${classId}:`, error);
+                // console.error(`Error processing class ID ${classId}:`, error);
                 return {
                     class_id: classId,
                     error: error.message
@@ -228,7 +239,7 @@ async function scrapeTimeTable(semesterSubId, authorizedID, csrfToken) {
         return transformedTimeTable;
 
     } catch (error) {
-        console.error('Error scraping timetable:', error);
+        // console.error('Error scraping timetable:', error);
         return [];
     }
 }
@@ -323,6 +334,6 @@ async function checkAndPromptSemester() {
             }
         }
     } catch (error) {
-        console.error("Error checking semester options:", error);
+        // console.error("Error checking semester options:", error);
     }
 }

@@ -1,3 +1,14 @@
+// Global error handler for window context
+window.onerror = function(msg, url, line, col, error) {
+    console.debug('Caught error:', { msg, url, line, col, error });
+    return true;
+};
+
+// Global error handler for unhandled promise rejections
+window.onunhandledrejection = function(event) {
+    console.debug('Caught promise rejection:', event.reason);
+    event.preventDefault();
+};
 // API communication functions
 async function sendAssignmentsToApi(formattedData) {
     try {
@@ -31,8 +42,8 @@ async function sendAssignmentsToApi(formattedData) {
 
         return await response.json();
     } catch (error) {
-        console.error('Error sending assignments to API:', error);
-        throw error;
+        // console.error('Error sending assignments to API:', error);
+        // throw error;
     }
 }
 
@@ -68,8 +79,8 @@ async function sendTimeTableToApi(formattedTimeTable) {
 
         return await response.json();
     } catch (error) {
-        console.error('Error sending timetable to API:', error);
-        throw error;
+        // console.error('Error sending timetable to API:', error);
+        // throw error;
     }
 }
 
@@ -81,8 +92,8 @@ async function checkAuthentication() {
         }
         return authToken;
     } catch (error) {
-        console.error('Authentication check failed:', error);
-        throw error;
+        // console.error('Authentication check failed:', error);
+        // throw error;
     }
 }
 
@@ -131,8 +142,8 @@ async function scrapeAndSendData(semesterSubId) {
 
         chrome.runtime.sendMessage({ action: "scrapingComplete" });
     } catch (error) {
-        console.error('Error in scrapeAndSendData:', error);
-        chrome.runtime.sendMessage({ action: "scrapingFailed", error: error.message });
+        // console.error('Error in scrapeAndSendData:', error);
+        // chrome.runtime.sendMessage({ action: "scrapingFailed", error: error.message });
     }
 }
 

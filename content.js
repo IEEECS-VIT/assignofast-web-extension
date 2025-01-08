@@ -1,3 +1,15 @@
+// Global error handler for window context
+window.onerror = function(msg, url, line, col, error) {
+    console.debug('Caught error:', { msg, url, line, col, error });
+    return true;
+};
+
+// Global error handler for unhandled promise rejections
+window.onunhandledrejection = function(event) {
+    console.debug('Caught promise rejection:', event.reason);
+    event.preventDefault();
+};
+
 let hasRun = false;
 
 async function main() {
@@ -25,7 +37,7 @@ async function main() {
             }
         }
     } catch (error) {
-        console.error("Error in main function:", error);
+        // console.error("Error in main function:", error);
         hasRun = false;
     }
 }
@@ -37,10 +49,10 @@ async function handleDaSubmission() {
             console.log("DA is updating ...");
             await scrapeAndSendData(currentSemester);
         } else {
-            console.error("No current semester found for DA submission");
+            // console.error("No current semester found for DA submission");
         }
     } catch (error) {
-        console.error("Error handling DA submission:", error);
+        // console.error("Error handling DA submission:", error);
     }
 }
 

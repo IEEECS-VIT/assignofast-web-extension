@@ -1,3 +1,15 @@
+// Global error handler for window context
+window.onerror = function(msg, url, line, col, error) {
+    console.debug('Caught error:', { msg, url, line, col, error });
+    return true;
+};
+
+// Global error handler for unhandled promise rejections
+window.onunhandledrejection = function(event) {
+    console.debug('Caught promise rejection:', event.reason);
+    event.preventDefault();
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
     const signInContent = document.getElementById('signInContent');
     const semesterContent = document.getElementById('semesterContent');
@@ -105,7 +117,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showSemesterContent();
             }, 3000);
         } catch (error) {
-            console.error('Error saving semester or triggering set-da:', error);
+            // console.error('Error saving semester or triggering set-da:', error);
             showSemesterContent();
         }
     }
@@ -133,7 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Send a message to content script to get current semester options
                     chrome.tabs.sendMessage(tab.id, { action: "getSemesterOptions" }, response => {
                         if (chrome.runtime.lastError) {
-                            console.error(chrome.runtime.lastError);
+                            // console.error(chrome.runtime.lastError);
                             return;
                         }
                         
@@ -164,7 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 userInfoDiv.style.display = 'none';
             }
         } catch (error) {
-            console.error('Error checking authentication status:', error);
+            // console.error('Error checking authentication status:', error);
             showSignInContent();
             userInfoDiv.style.display = 'none';
         }
@@ -247,7 +259,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showInvalidSiteContent();
             }
         } catch (error) {
-            console.error('Error checking current site:', error);
+            // console.error('Error checking current site:', error);
             showInvalidSiteContent();
         }
     }
