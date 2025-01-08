@@ -74,56 +74,6 @@ async function checkAuthentication() {
     }
 }
 
-async function formatAndSendData(data) {
-    const formattedClasses = data.courses.map(course => {
-        if (!course.class_id || !course.course_code || !course.course_title || !Array.isArray(course.duedates)) {
-            console.error('Invalid course data:', course);
-            return null;
-        }
-
-        const validDuedates = course.duedates.filter(duedate =>
-            duedate.assessment_title && duedate.date_due !== undefined
-        );
-
-        return {
-            class_id: course.class_id,
-            course_code: course.course_code,
-            course_title: course.course_title,
-            course_assignments: validDuedates
-        };
-    }).filter(course => course !== null);
-
-    const { uid } = await chrome.storage.local.get(['uid']);
-
-    const payload = {
-        uid: uid,
-        classes: formattedClasses
-    };
-
-    try {
-        const authToken = await checkAuthentication();
-
-        const response = await fetch('https://assignofast-backend.vercel.app/assignments/set-da', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-        }
-
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('Error sending data:', error);
-        throw error;
-    }
-}
 
 async function scrapeAndSendData(semesterSubId) {
     try {
