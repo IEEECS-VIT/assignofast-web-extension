@@ -9,6 +9,25 @@ window.onunhandledrejection = function(event) {
     console.debug('Caught promise rejection:', event.reason);
     event.preventDefault();
 };
+const signInContent = document.getElementById('signInContent');
+const semesterContent = document.getElementById('semesterContent');
+const loader = document.getElementById('loader');
+const completionMessage = document.getElementById('completionMessage');
+
+function showSignInContent() {
+    signInContent.style.display = 'block';
+    semesterContent.style.display = 'none';
+    loader.style.display = 'none';
+    completionMessage.style.display = 'none';
+}
+
+function logout() {
+    chrome.storage.local.remove(['uid', 'email', 'authToken', 'previousTimeTable', 'previousAssignments', 'currentSemester', 'justSignedIn', 'semesterOptions', 'currentSemesterName'], () => {
+        showSignInContent();
+        userInfoDiv.style.display = 'none';
+    });
+}
+
 // API communication functions
 async function sendAssignmentsToApi(formattedData) {
     try {
@@ -35,6 +54,12 @@ async function sendAssignmentsToApi(formattedData) {
             body: JSON.stringify(payload)
         });
 
+        if (response.status === 403) {
+            console.debug('Authentication failed (403) - logging out');
+            logout();
+            return;
+        }
+
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
@@ -42,8 +67,10 @@ async function sendAssignmentsToApi(formattedData) {
 
         return await response.json();
     } catch (error) {
-        // console.error('Error sending assignments to API:', error);
-        // throw error;
+        console.debug('Error sending assignments to API:', error);
+        if (error.message.includes('403')) {
+            logout();
+        }
     }
 }
 
@@ -72,6 +99,12 @@ async function sendTimeTableToApi(formattedTimeTable) {
             body: JSON.stringify(payload)
         });
 
+        if (response.status === 403) {
+            console.debug('Authentication failed (403) - logging out');
+            logout();
+            return;
+        }
+
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
@@ -79,8 +112,10 @@ async function sendTimeTableToApi(formattedTimeTable) {
 
         return await response.json();
     } catch (error) {
-        // console.error('Error sending timetable to API:', error);
-        // throw error;
+        console.debug('Error sending timetable to API:', error);
+        if (error.message.includes('403')) {
+            logout();
+        }
     }
 }
 
@@ -88,15 +123,17 @@ async function checkAuthentication() {
     try {
         const { authToken } = await chrome.storage.local.get(['authToken']);
         if (!authToken) {
+            console.debug('No auth token found - logging out');
+            logout();
             throw new Error('No auth token found');
         }
         return authToken;
     } catch (error) {
-        // console.error('Authentication check failed:', error);
-        // throw error;
+        console.debug('Authentication check failed:', error);
+        logout();
+        throw error;
     }
 }
-
 
 async function scrapeAndSendData(semesterSubId) {
     try {
@@ -142,8 +179,10 @@ async function scrapeAndSendData(semesterSubId) {
 
         chrome.runtime.sendMessage({ action: "scrapingComplete" });
     } catch (error) {
-        // console.error('Error in scrapeAndSendData:', error);
-        // chrome.runtime.sendMessage({ action: "scrapingFailed", error: error.message });
+        console.debug('Error in scrapeAndSendData:', error);
+        if (error.message.includes('403')) {
+            logout();
+        }
+        chrome.runtime.sendMessage({ action: "scrapingFailed", error: error.message });
     }
 }
-
