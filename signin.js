@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 1000);
 
         } catch (error) {
-            console.error('Error during sign-in:', error);
+            console.debug('Error during sign-in:', error);
             loader.style.display = 'none';
             buttonText.textContent = 'Continue with Google';
             signInButton.disabled = false;
