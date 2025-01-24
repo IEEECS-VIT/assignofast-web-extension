@@ -52,7 +52,7 @@ async function sendAssignmentsToApi(formattedData) {
             semesterName: currentSemesterName
         };
 
-        const response = await fetch('https://assignofast-backend.vercel.app/assignments/set-da', {
+        const response = await fetch('https://api-ywtue46pfq-el.a.run.app/assignments/set-da', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ async function sendTimeTableToApi(formattedTimeTable) {
             semesterName: currentSemesterName
         };
 
-        const response = await fetch('https://assignofast-backend.vercel.app/timetable/set-timetable', {
+        const response = await fetch('https://api-ywtue46pfq-el.a.run.app/timetable/set-timetable', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

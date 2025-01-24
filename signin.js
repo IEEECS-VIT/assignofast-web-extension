@@ -134,7 +134,7 @@ async function saveUserData(uid, email, authToken, reg) {
 }
 
 async function sendToBackend(uid, idToken) {
-    const response = await fetch(`https://assignofast-backend.vercel.app/auth/login?uid=${uid}&googleAccessToken=${idToken}`, {
+    const response = await fetch(`https://api-ywtue46pfq-el.a.run.app/auth/login?uid=${uid}&googleAccessToken=${idToken}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

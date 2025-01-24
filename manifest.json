@@ -45,7 +45,7 @@
     ],
     "host_permissions": [
         "https://vtop.vit.ac.in/*",
-        "https://assignofast-backend.vercel.app/*"
+        "https://api-ywtue46pfq-el.a.run.app/*"
     ],
     "oauth2": {
         "client_id": "889572280066-p510o3jvm01oqj9fjhecrs27hn5fi30h.apps.googleusercontent.com",
