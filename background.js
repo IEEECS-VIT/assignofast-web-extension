@@ -186,7 +186,7 @@ function xhrListener(details) {
     if (details.method === "POST" &&
         (
             // details.url.includes("examinations/doDAssignmentOtpUpload") ||
-            details.url.includes("examinations/doDAssignmentUploadMethod")) &&
+            details.url.includes("examinations/doDigitalAssignment")) &&
         details.statusCode === 200) {
 
         console.debug("DA updation detected:", details.url);
