@@ -190,9 +190,9 @@ function xhrListener(details) {
         details.statusCode === 200) {
 
         console.debug("DA updation detected:", details.url);
-        setTimeout(() => {
-            chrome.tabs.sendMessage(details.tabId, { action: "triggerDaScrape" });
-        }, 10000);
+        
+        chrome.tabs.sendMessage(details.tabId, { action: "triggerDaScrape" });
+        
         
     }
 }
