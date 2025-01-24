@@ -48,7 +48,7 @@
         "https://api-ywtue46pfq-el.a.run.app/*"
     ],
     "oauth2": {
-        "client_id": "889572280066-p510o3jvm01oqj9fjhecrs27hn5fi30h.apps.googleusercontent.com",
+        "client_id": "217894681447-vgosg8r97un162qc3sm0757e4bff1hgm.apps.googleusercontent.com",
 
         "scopes": [
             "https://www.googleapis.com/auth/userinfo.email",

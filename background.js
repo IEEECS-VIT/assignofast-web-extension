@@ -183,20 +183,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // });
 
 function xhrListener(details) {
-    if (details.method === "POST" &&
-        (
-            // details.url.includes("examinations/doDAssignmentOtpUpload") ||
-            details.url.includes("examinations/doDigitalAssignment")) &&
-        details.statusCode === 200) {
 
-        console.debug("DA updation detected:", details.url);
+
+    if (details.method === "POST" &&
+        details.url.includes("examinations/doDAssignmentUploadMethod") &&
+        details.statusCode === 200) {   
+
+        console.log("Verified DA updation detected:", details.url);
         
         chrome.tabs.sendMessage(details.tabId, { action: "triggerDaScrape" });
-        
-        
     }
 }
-
 function addXhrListener() {
     if (!chrome.webRequest.onCompleted.hasListener(xhrListener)) {
         chrome.webRequest.onCompleted.addListener(

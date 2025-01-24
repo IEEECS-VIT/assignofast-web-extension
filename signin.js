@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 async function getAuthToken() {
     return new Promise((resolve, reject) => {
-        const CLIENT_ID = '889572280066-p510o3jvm01oqj9fjhecrs27hn5fi30h.apps.googleusercontent.com';
+        const CLIENT_ID = '217894681447-vgosg8r97un162qc3sm0757e4bff1hgm.apps.googleusercontent.com';
 
         const REDIRECT_URL = chrome.identity.getRedirectURL();
         const SCOPES = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'openid'];
@@ -102,7 +102,7 @@ async function getUserInfo(token) {
 }
 
 async function signInToFirebase(googleIdToken) {
-    const API_KEY = 'AIzaSyCwBHisi29c42yyP57K9B94WHFzYjYR4I8';
+    const API_KEY = 'AIzaSyDc1eTB8cyMXv4t5sCeX13Y0VeFQ0skKV4';
     const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${API_KEY}`, {
         method: 'POST',
         headers: {
