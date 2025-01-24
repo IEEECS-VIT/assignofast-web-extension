@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const authResult = await getAuthToken();
             const userInfo = await getUserInfo(authResult.access_token);
-
+            const regNo = userInfo.name.split(' ').slice(-1)[0];
             if (!userInfo.email.endsWith('@vitstudent.ac.in')) {
                 throw new Error('Only @vitstudent.ac.in email addresses are allowed.');
             }
@@ -32,17 +32,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const uid = firebaseUser.localId; 
 
             const backendResponse = await sendToBackend(uid, firebaseUser.idToken);
-            // console.debug(firebaseUser.idToken);
-            await saveUserData(uid, userInfo.email, backendResponse.token);
-
-            console.debug('User data saved successfully');
+            // Save user data including name and log it
+            await saveUserData(uid, userInfo.email, backendResponse.token, regNo);
+            console.debug('User signed in:', {
+                uid: uid,
+                email: userInfo.email,
+                registration_num : regNo
+            });
 
             buttonText.textContent = 'Signed in';
             loader.style.display = 'none';
 
             setTimeout(() => {
                 window.close();
-            }, 1000);
+            }, 1500);
 
         } catch (error) {
             console.debug('Error during sign-in:', error);
@@ -121,11 +124,12 @@ async function signInToFirebase(googleIdToken) {
     return response.json();
 }
 
-async function saveUserData(uid, email, authToken) {
+async function saveUserData(uid, email, authToken, reg) {
     await chrome.storage.local.set({
         uid: uid,
         email: email,
-        authToken: authToken 
+        authToken: authToken,
+        regNo: reg
     });
 }
 

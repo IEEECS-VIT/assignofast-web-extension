@@ -184,12 +184,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 function xhrListener(details) {
     if (details.method === "POST" &&
-        (details.url.includes("examinations/doDAssignmentOtpUpload") ||
+        (
+            // details.url.includes("examinations/doDAssignmentOtpUpload") ||
             details.url.includes("examinations/doDAssignmentUploadMethod")) &&
         details.statusCode === 200) {
 
         console.debug("DA updation detected:", details.url);
-        chrome.tabs.sendMessage(details.tabId, { action: "triggerDaScrape" });
+        setTimeout(() => {
+            chrome.tabs.sendMessage(details.tabId, { action: "triggerDaScrape" });
+        }, 10000);
+        
     }
 }
 

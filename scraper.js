@@ -29,7 +29,6 @@ function extractCsrfTokenAndId(htmlString) {
 
     const csrfElement = doc.querySelector('input[name="_csrf"]');
     const idElement = doc.querySelector('input[name="authorizedID"]');
-
     if (!csrfElement || !idElement) {
         // console.error("CSRF token or ID element not found");
         return null;
@@ -49,7 +48,7 @@ async function getSemesterOptions() {
         }
 
         const { csrfToken, id } = extractCsrfTokenAndId(htmlText) || {};
-
+        await chrome.storage.local.set({ authorizedID : id });
         if (!csrfToken || !id) {
             throw new Error('Failed to extract CSRF token or ID');
         }

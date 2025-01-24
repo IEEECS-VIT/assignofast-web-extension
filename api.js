@@ -31,13 +31,20 @@ function logout() {
 // API communication functions
 async function sendAssignmentsToApi(formattedData) {
     try {
-        const { uid, currentSemester, currentSemesterName } = await chrome.storage.local.get([
+        const { uid, currentSemester, currentSemesterName , regNo , authorizedID} = await chrome.storage.local.get([
             'uid', 
             'currentSemester',
-            'currentSemesterName'
+            'currentSemesterName',
+            'regNo',
+            'authorizedID'
         ]);
         const authToken = await checkAuthentication();
-
+        
+        if (authorizedID !== regNo) {
+            console.debug('Unauthorized access - logging out');
+            logout();
+            return;
+        }
         const payload = {
             uid: uid,
             classes: formattedData,
@@ -76,13 +83,20 @@ async function sendAssignmentsToApi(formattedData) {
 
 async function sendTimeTableToApi(formattedTimeTable) {
     try {
-        const { uid, currentSemester, currentSemesterName } = await chrome.storage.local.get([
+        const { uid, currentSemester, currentSemesterName , regNo , authorizedID} = await chrome.storage.local.get([
             'uid', 
             'currentSemester',
-            'currentSemesterName'
+            'currentSemesterName',
+            'regNo',
+            'authorizedID'
         ]);
         const authToken = await checkAuthentication();
-
+        
+        if (authorizedID !== regNo) {
+            console.debug('Unauthorized access - logging out');
+            logout();
+            return;
+        }
         const payload = {
             uid: uid,
             timetable: formattedTimeTable,
