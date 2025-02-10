@@ -149,6 +149,22 @@ async function checkAuthentication() {
     }
 }
 
+async function scrapeSingleDaandSend(classId) {
+    try {
+        const { csrfToken, id } = extractCsrfTokenAndId(document.documentElement.innerHTML);
+        const classIds = [classId];
+        const rawAssignmentData = await scrapeDigitalAssignments(classIds, id, csrfToken);
+        const formattedAssignments = formatAssignmentData(rawAssignmentData);
+        await sendAssignmentsToApi(formattedAssignments);
+    } catch(error) {
+        console.debug('Error in scrapeSingleDaandSend:', error);
+        if (error.message.includes('403')) {
+            logout();
+        }
+        chrome.runtime.sendMessage({ action: "scrapingFailed", error: error.message });
+    }
+}
+
 async function scrapeAndSendData(semesterSubId) {
     try {
         const { csrfToken, id } = extractCsrfTokenAndId(document.documentElement.innerHTML);

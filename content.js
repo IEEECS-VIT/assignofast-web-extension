@@ -67,6 +67,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.action === "triggerDaScrape") {
         handleDaSubmission();
     }
+    else if (request.action === "triggerSetDaSingle") {
+        scrapeSingleDaandSend(request.classId);
+    }
 });
 
 document.addEventListener('DOMContentLoaded', main);
