@@ -18,7 +18,7 @@ const theoryTimings = {
 
     // C slots
     'C1': ['8:00 AM - 8:50 AM', '9:00 AM - 9:50 AM'],  // Wednesday 8AM, Friday 9AM
-    'C2': ['2:00 PM - 2:50 PM', '2:51 PM - 3:40 PM'],    // Wednesday 2PM, Friday 3PM
+    'C2': ['2:00 PM - 2:50 PM', '3:00 PM - 3:50 PM'],    // Wednesday 2PM, Friday 3PM
 
     // D slots
     'D1': ['10:00 AM - 10:50 AM', '8:00 AM - 8:50 AM'],  // Monday 10AM, Thursday 8AM
@@ -26,7 +26,7 @@ const theoryTimings = {
 
     // E slots
     'E1': ['10:00 AM - 10:50 AM', '8:00 AM - 8:50 AM'],  // Tuesday 10AM, Friday 8AM
-    'E2': ['2:00 PM - 2:50 PM', '2:00 PM - 2:50 PM'],      // Tuesday 2PM, Friday 2PM
+    'E2': ['4:00 PM - 4:50 PM', '2:00 PM - 2:50 PM'],      // Tuesday 4PM, Friday 2PM
 
     // F slots
     'F1': ['9:00 AM - 9:50 AM', '10:00 AM - 10:50 AM'],    // Monday 9AM, Wednesday 10AM
@@ -46,7 +46,7 @@ const theoryTimings = {
     'TBB2': '6:00 PM - 6:50 PM',
     'TC1': '11:00 AM - 11:50 AM',
     'TC2': '5:00 PM - 5:50 PM',
-    'TCC1': '12:00 AM - 12:50 AM',
+    'TCC1': '12:00 PM - 12:50 PM',
     'TCC2': '6:00 PM - 6:50 PM',
     'TD1': '12:00 PM - 12:50 PM',
     'TD2': '5:00 PM - 5:50 PM',
